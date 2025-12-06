@@ -209,6 +209,7 @@ sap.ui.define([
                 MessageToast.show("Gửi email đã được gọi");
             },
             onValueHelpCode: function () {
+                //lấy data từ front end thì nhanh hơn nhiều
                 var oView = this.getView();
                 var oJobTable = this.byId("jobTable");
                 var aItems = oJobTable.getItems(); // lấy list hiện có trên frontend
@@ -272,6 +273,7 @@ sap.ui.define([
             },
 
             onValueHelpName: function () {
+                //lấy data từ front end thì nhanh hơn nhiều
                  var oView = this.getView();
                 var oJobTable = this.byId("jobTable");
                 var aItems = oJobTable.getItems(); // lấy list hiện có trên frontend
@@ -336,6 +338,6 @@ sap.ui.define([
 
             onCloseValueHelp: function (oEvent) {
                 oEvent.getSource().getParent().close();
-            },
+            },  
         });
     });
