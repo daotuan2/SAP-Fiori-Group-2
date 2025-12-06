@@ -1,0 +1,16 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Dialog id="updateDialog" title="Cập nhật chức danh" type="Message">
+    <VBox id="idVbox" class="sapUiSmallMargin">
+      <Label id="idLable2" text="Mã chức danh mới"/>
+      <Input id="inputCode" value="" editable="false"/>
+      <Label id="idLable1" text="Tên chức danh mới"/>
+      <Input id="inputName" value=""/>
+    </VBox>
+    <beginButton>
+      <Button id="idbt1" text="Lưu" press="onConfirmUpdate"/>
+    </beginButton>
+    <endButton>
+      <Button id="idbt2" text="Hủy" press="onCancelUpdate"/>
+    </endButton>
+  </Dialog>
+</core:FragmentDefinition>

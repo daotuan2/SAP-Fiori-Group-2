@@ -1,0 +1,24 @@
+{
+  "generationParameters": {
+    "generationDate": "Sat Dec 06 2025 15:01:58 GMT+0700 (Indochina Time)",
+    "generatorPlatform": "Visual Studio Code",
+    "serviceType": "SAP System (ABAP On-Premise)",
+    "metadataFilename": "",
+    "serviceUrl": "https://s35lp1.ucc.cit.tum.de:8100/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV",
+    "appName": "freestyle_ui5_fiori",
+    "appTitle": "Job Title and Send Mail",
+    "appDescription": "Job Title and Send Mail",
+    "appNamespace": "freestyle_ui5_fiori",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.108.33",
+    "enableCodeAssist": false,
+    "enableEslint": false,
+    "enableTypeScript": false,
+    "showMockDataInfo": true,
+    "generatorVersion": "1.19.0",
+    "template": "Basic V2",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [],
+    "launchText": "To launch the generated application, run the following from the generated application root folder:\n\n```\n    npm start\n```"
+  }
+}

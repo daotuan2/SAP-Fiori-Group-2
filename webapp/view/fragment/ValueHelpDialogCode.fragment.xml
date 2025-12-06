@@ -1,0 +1,15 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+    <Dialog id="valueHelpDialogCode" title="Chọn Mã chức danh" 
+            stretch="true" draggable="true" resizable="true">
+        <Table id="valueHelpTableCode"
+               mode="SingleSelectMaster" selectionChange="onSelectValueHelpCode">
+            <columns>
+                <Column id="idcolumn5"><Text id="idtext9" text="Mã chức danh"/></Column>
+                <Column id="idcolumn6"><Text id="idtext8" text="Tên chức danh"/></Column>
+            </columns>
+        </Table>
+        <endButton>
+            <Button id="idbutton7" text="Đóng" press="onCloseValueHelp"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

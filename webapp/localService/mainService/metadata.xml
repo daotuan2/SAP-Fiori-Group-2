@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:sap="http://www.sap.com/Protocols/SAPData">
+    <edmx:DataServices m:DataServiceVersion="2.0">
+        <Schema Namespace="ZODATA_GR2_SAP490_SRV" xml:lang="en" sap:schema-version="1" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+            <Annotation Term="Core.SchemaVersion" String="1.0.0" xmlns="http://docs.oasis-open.org/odata/ns/edm"/>
+            <EntityType Name="Subscription" sap:semantics="subscriptions" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.String" Nullable="false" MaxLength="32" sap:label="Sub. ID" sap:creatable="false" sap:updatable="false" sap:filterable="false"/>
+                <Property Name="user" Type="Edm.String" MaxLength="12" m:FC_TargetPath="SyndicationAuthorName" m:FC_KeepInContent="false" sap:label="User Name" sap:creatable="false" sap:filterable="false"/>
+                <Property Name="updated" Type="Edm.DateTime" Precision="0" m:FC_TargetPath="SyndicationUpdated" m:FC_KeepInContent="false" sap:label="Time Stamp" sap:creatable="false" sap:filterable="false"/>
+                <Property Name="title" Type="Edm.String" MaxLength="255" m:FC_TargetPath="SyndicationTitle" m:FC_KeepInContent="false" sap:label="Title" sap:filterable="false"/>
+                <Property Name="deliveryAddress" Type="Edm.String" sap:label="Delivery Address" sap:filterable="false"/>
+                <Property Name="persistNotifications" Type="Edm.Boolean" sap:label="Persist Notification" sap:filterable="false"/>
+                <Property Name="collection" Type="Edm.String" MaxLength="40" sap:label="Collection" sap:filterable="false"/>
+                <Property Name="filter" Type="Edm.String" sap:label="Filter" sap:filterable="false"/>
+                <Property Name="select" Type="Edm.String" MaxLength="255" sap:label="Select" sap:filterable="false"/>
+                <Property Name="changeType" Type="Edm.String" MaxLength="30" sap:label="Change Type"/>
+            </EntityType>
+            <EntityType Name="Notification" sap:semantics="notifications" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.String" Nullable="false" MaxLength="32" sap:label="Notification ID"/>
+                <Property Name="collection" Type="Edm.String" MaxLength="40" sap:label="Collection"/>
+                <Property Name="title" Type="Edm.String" m:FC_TargetPath="SyndicationTitle" m:FC_KeepInContent="false" sap:label="Notif. Text"/>
+                <Property Name="updated" Type="Edm.DateTime" Precision="0" m:FC_TargetPath="SyndicationUpdated" m:FC_KeepInContent="false" sap:label="Time Stamp"/>
+                <Property Name="changeType" Type="Edm.String" MaxLength="30" sap:label="Change Type"/>
+                <Property Name="entriesOfInterest" Type="Edm.Int32" sap:label="No. of Entries"/>
+                <Property Name="recipient" Type="Edm.String" MaxLength="112" sap:label="Recipient" sap:creatable="false" sap:updatable="false"/>
+            </EntityType>
+            <EntityType Name="User_Email" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="NO"/>
+                </Key>
+                <Property Name="EMAIL_CC" Type="Edm.String" MaxLength="1" sap:unicode="false" sap:label="Được CC"/>
+                <Property Name="NO" Type="Edm.Int16" Nullable="false" sap:unicode="false" sap:label="No" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
+                <Property Name="TYPE_EMAIL_SEND" Type="Edm.String" MaxLength="7" sap:unicode="false" sap:label="Kiểu Email Gửi"/>
+                <Property Name="JT_NAME" Type="Edm.String" Nullable="false" MaxLength="100" sap:unicode="false" sap:label="Nhóm Chức Danh"/>
+                <Property Name="CREATE_TIME" Type="Edm.DateTime" Nullable="false" Precision="0" sap:unicode="false" sap:label="Ngày Tạo"/>
+                <Property Name="USER_CREATE" Type="Edm.String" Nullable="false" MaxLength="12" sap:unicode="false" sap:label="Người Tạo"/>
+                <Property Name="Company_Code" Type="Edm.String" Nullable="false" MaxLength="4" sap:unicode="false" sap:label="Công Ty"/>
+                <Property Name="JT_CODE" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Mã Chức Danh"/>
+                <Property Name="EMAIL" Type="Edm.String" Nullable="false" MaxLength="50" sap:unicode="false" sap:label="Email"/>
+                <Property Name="UserName" Type="Edm.String" Nullable="false" MaxLength="100" sap:unicode="false" sap:label="Tên Cán Bộ"/>
+                <Property Name="username_code" Type="Edm.String" Nullable="false" MaxLength="20" sap:unicode="false" sap:label="User Name"/>
+            </EntityType>
+            <EntityType Name="Job_Title_Entity" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="JT_CODE"/>
+                </Key>
+                <Property Name="JT_NAME" Type="Edm.String" Nullable="false" MaxLength="100" sap:unicode="false" sap:label="Chức danh"/>
+                <Property Name="JT_CODE" Type="Edm.String" Nullable="false" MaxLength="10" sap:unicode="false" sap:label="Mã chức danh"/>
+            </EntityType>
+            <EntityContainer Name="ZODATA_GR2_SAP490_SRV_Entities" m:IsDefaultEntityContainer="true" sap:supported-formats="atom json xlsx">
+                <EntitySet Name="SubscriptionCollection" EntityType="ZODATA_GR2_SAP490_SRV.Subscription" sap:content-version="1"/>
+                <EntitySet Name="NotificationCollection" EntityType="ZODATA_GR2_SAP490_SRV.Notification" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:addressable="false" sap:content-version="1"/>
+                <EntitySet Name="User_EmailSet" EntityType="ZODATA_GR2_SAP490_SRV.User_Email" sap:searchable="true" sap:content-version="1"/>
+                <EntitySet Name="Job_Title_EntitySet" EntityType="ZODATA_GR2_SAP490_SRV.Job_Title_Entity" sap:searchable="true" sap:content-version="1"/>
+            </EntityContainer>
+            <atom:link rel="self" href="https://s35lp1.ucc.cit.tum.de:8100/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+            <atom:link rel="latest-version" href="https://s35lp1.ucc.cit.tum.de:8100/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

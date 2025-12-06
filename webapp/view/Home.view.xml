@@ -1,0 +1,56 @@
+<mvc:View controllerName="freestyleui5fiori.freestyleui5fiori.controller.Home"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m">
+    <Page id="page" title="{i18n>title}">
+        <content>
+            <!-- Bộ lọc tìm kiếm -->
+            <VBox id="idVbox3" class="sapUiSmallMargin">
+                <!-- Bộ lọc chức danh -->
+                <HBox id="idVbox4" alignItems="Center" class="sapUiSmallMarginBottom">
+                    <Label id="idLable6" text="Mã chức danh:" />
+                    <Input id="searchCode" width="250px" showValueHelp="true" valueHelpRequest="onValueHelpCode" class="sapUiSmallMarginBegin"/>
+
+                    <Label id="idLable7" text="Tên chức danh:" class="sapUiSmallMarginBegin"/>
+                    <Input id="searchName" width="250px" showValueHelp="true" valueHelpRequest="onValueHelpName" class="sapUiSmallMarginBegin"/>
+
+                    <Button id="idbutton6" text="Go" type="Emphasized" press="onSearch" class="sapUiSmallMarginBegin"/>
+                    <!-- <Link id="idlink5" text="Adapt Filters" class="sapUiSmallMarginBegin" press="onAdaptFilters"/> -->
+                </HBox>
+            </VBox>
+
+            <!-- Toolbar chức năng -->
+            <Toolbar id="actionToolbar" class="sapUiSmallMarginTop">
+                <Button id="createButton" text="Tạo" icon="sap-icon://add" press="onOpenCreateDialog"/>
+                <Button id="deleteButton" text="Xóa" icon="sap-icon://delete" press="onDeleteSelected"/>
+                <Button id="updateButton" text="Cập nhật" icon="sap-icon://edit" press="onOpenUpdateDialog"/>
+                <Button id="idbutton5" text="Gửi Email" icon="sap-icon://email" press="onSendEmail"/>
+            </Toolbar>
+
+            <!-- Tab danh sách -->
+            <IconTabBar id="mainTabBar" class="sapUiSmallMarginTop"  select="onTabSelect">
+                <items>
+                    <IconTabFilter id="idicontabfilter" text="Danh sách chức danh" key="titles" icon="sap-icon://employee">
+                        <Table id="jobTable" items="{/Job_Title_EntitySet}" mode="SingleSelectMaster">
+                            <columns>
+                                <Column id="idcolumn1"><Text id="idtext1" text="Mã chức danh"/></Column>
+                                <Column id="idcolumn2"><Text id="idtext2" text="Tên chức danh"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem id="idcolumnlistitem1">
+                                    <cells>
+                                        <Text id="idtext3" text="{JT_CODE}"/>
+                                        <Text id="idtext4" text="{JT_NAME}"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                    <IconTabFilter id="idicontabfilter1" text="Danh sách email người dùng" key="emails" icon="sap-icon://email">
+                        <Text id="idtext5" text="(Chưa triển khai)"/>
+                    </IconTabFilter>
+                </items>
+            </IconTabBar>
+        </content>
+    </Page>
+</mvc:View>
