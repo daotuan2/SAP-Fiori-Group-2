@@ -184,14 +184,17 @@ sap.ui.define([
                     JT_CODE: sNewCode
                 };
 
+                var that = this;
                 oModel.update(sPath, oUpdatedData, {
                     success: function () {
                         MessageToast.show("Cập nhật thành công");
+                        that._setDataTreeTable();
                     },
                     error: function () {
                         MessageToast.show("Cập nhật thất bại");
                     }
                 });
+
 
                 this._oDialog.close();
             },
