@@ -14,7 +14,7 @@ sap.ui.define([
             metadata: {
                 manifest: "json"
             },
-
+            // file này Khởi tạo UIComponent, đọc manifest, khởi tạo router, gắn model.
             /**
              * The component is initialized by UI5 automatically during the startup of the app and calls the init method once.
              * @public
@@ -22,6 +22,7 @@ sap.ui.define([
              */
             init: function () {
                 // call the base component's init function
+                //đây là nơi khởi tạo ODataModel để thực hiện get create update delete data
                 UIComponent.prototype.init.apply(this, arguments);
 
                 // enable routing
@@ -29,10 +30,6 @@ sap.ui.define([
 
                 // set the device model
                 this.setModel(models.createDeviceModel(), "device");
-
-                // // gắn ODataModel thủ công để chắc chắn
-                // var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV/");
-                // this.setModel(oModel); // default model
             }
         });
     }

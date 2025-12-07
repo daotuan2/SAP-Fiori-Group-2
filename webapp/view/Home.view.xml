@@ -29,6 +29,7 @@
             </Toolbar>
 
             <!-- Tab danh sách -->
+            <!-- UI5 tự động gọi OData service và binding dữ liệu vào bảng -->
             <IconTabBar id="mainTabBar" class="sapUiSmallMarginTop"  select="onTabSelect">
                 <items>
                     <IconTabFilter id="idicontabfilter" text="Danh sách chức danh" key="titles" icon="sap-icon://employee">
@@ -49,6 +50,7 @@
                     </IconTabFilter>
 
                     <!-- Tab danh sách email -->
+                    <!-- binding vào model "tree" và hiện thị từ model đó-->
                     <IconTabFilter id="idicontabfilter1" text="Danh sách email người dùng" key="emails" icon="sap-icon://email">
                         <table:TreeTable id="emailTreeTable" rows="{tree>/nodes}" selectionMode="Single" visibleRowCount="15">
                             <table:columns>

@@ -65,6 +65,7 @@
       },
       "": {
         "dataSource": "mainService",
+        "type": "sap.ui.model.odata.v2.ODataModel",
         "preload": true,
         "settings": {
           "defaultBindingMode": "TwoWay",
