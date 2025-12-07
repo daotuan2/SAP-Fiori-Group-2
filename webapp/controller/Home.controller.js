@@ -18,6 +18,8 @@ sap.ui.define([
 
                 // Gọi hàm xử lý giống như khi select
                 this._updateToolbarVisibility(sKey);
+
+                this._setDataTreeTable();
             },
 
             onTabSelect: function (oEvent) {
@@ -30,19 +32,74 @@ sap.ui.define([
                 var oDeleteBtn = this.byId("deleteButton");
                 var oUpdateBtn = this.byId("updateButton");
                 var oSendMailBtn = this.byId("idbutton5");
+                var oTemplateBtn = this.byId("idbutton9");
 
                 if (sKey === "titles") {
                     oCreateBtn.setVisible(true);
                     oDeleteBtn.setVisible(true);
                     oUpdateBtn.setVisible(true);
                     oSendMailBtn.setVisible(false);
+                    oTemplateBtn.setVisible(false);
                 } else if (sKey === "emails") {
                     oCreateBtn.setVisible(false);
                     oDeleteBtn.setVisible(false);
                     oUpdateBtn.setVisible(false);
                     oSendMailBtn.setVisible(true);
+                    oTemplateBtn.setVisible(true);
+
                 }
             },
+            _setDataTreeTable: function () {
+                var oModel = this.getOwnerComponent().getModel(); // luôn có default model
+                var that = this; //Lưu this ra biến
+                oModel.metadataLoaded().then(function () {
+                    oModel.read("/User_EmailSet", {
+                        success: function (oData) {
+                            var groupedCompany = {};
+
+                            oData.results.forEach(function (item) {
+                                var company = item.Company_Code;
+                                var jtCode = item.JT_CODE;
+                                var jtName = item.JT_NAME;
+
+                                // Tạo node công ty
+                                if (!groupedCompany[company]) {
+                                    groupedCompany[company] = {
+                                        Company_Code: company,
+                                        children: {}
+                                    };
+                                }
+
+                                // Tạo node nhóm chức danh theo JT_CODE
+                                if (!groupedCompany[company].children[jtCode]) {
+                                    groupedCompany[company].children[jtCode] = {
+                                        JT_CODE: jtCode,
+                                        JT_NAME: jtName, // dùng để hiển thị
+                                        children: []
+                                    };
+                                }
+
+                                // Thêm email vào nhóm chức danh
+                                groupedCompany[company].children[jtCode].children.push(item);
+                            });
+
+                            // Chuyển thành mảng nodes
+                            var treeData = {
+                                nodes: Object.values(groupedCompany).map(function (companyNode) {
+                                    return {
+                                        Company_Code: companyNode.Company_Code,
+                                        children: Object.values(companyNode.children)
+                                    };
+                                })
+                            };
+
+                            var oTreeModel = new sap.ui.model.json.JSONModel(treeData);
+                            that.getOwnerComponent().setModel(oTreeModel, "tree");
+                        }.bind(this)
+                    });
+                });
+            },
+
             onDeleteSelected: function () {
                 var oTable = this.byId("jobTable");
                 var oSelected = oTable.getSelectedItem();
@@ -116,7 +173,7 @@ sap.ui.define([
                     JT_NAME: sNewName,
                     JT_CODE: sNewCode
                 };
-
+                console.log(oModel, sPath);
                 oModel.update(sPath, oUpdatedData, {
                     success: function () {
                         MessageToast.show("Cập nhật thành công");
@@ -274,7 +331,7 @@ sap.ui.define([
 
             onValueHelpName: function () {
                 //lấy data từ front end thì nhanh hơn nhiều
-                 var oView = this.getView();
+                var oView = this.getView();
                 var oJobTable = this.byId("jobTable");
                 var aItems = oJobTable.getItems(); // lấy list hiện có trên frontend
 
@@ -338,6 +395,213 @@ sap.ui.define([
 
             onCloseValueHelp: function (oEvent) {
                 oEvent.getSource().getParent().close();
-            },  
+            },
+
+            onDisplayTemplateEmail: function () {
+                var oTreeTable = this.byId("emailTreeTable");
+                var oSelected = oTreeTable.getSelectedIndex();
+
+                if (oSelected < 0) {
+                    sap.m.MessageToast.show("Vui lòng chọn một dòng.");
+                    return;
+                }
+
+                var oContext = oTreeTable.getContextByIndex(oSelected);
+                var sJTName = oContext.getProperty("JT_NAME");
+                var sJTCode = oContext.getProperty("JT_CODE");
+
+                if (!sJTName) {
+                    sap.m.MessageToast.show("Dòng được chọn không có nhóm chức danh.");
+                    return;
+                }
+
+                // Nếu có nhóm chức danh → mở popup
+                this._showTemplatePopup(sJTName, sJTCode);
+            },
+
+            _showTemplatePopup: function (sJTName, sJTCode) {
+                var oHtmlContent_GD = new sap.ui.core.HTML({
+                    content: `
+                            <div style="padding:10px;">
+                            <h2 style="color:red;">Template Email cho ${sJTName}</h2>
+                            <p>Kính gửi Anh/Chị,</p>
+                            <p>Báo cáo anh/chị kết quả đánh giá định kỳ Nhà cung cấp của công ty tại kỳ đánh giá 12 năm 2025 như sau:</p>
+                            <h3 style="margin-top:20px;">Top 5 Nhà cung cấp có điểm xếp hạng cao</h3>
+                            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                              <thead>
+                                <tr style="background:#f1f1f1;">
+                                  <th style="border:1px solid #ccc; padding:6px;">Xếp hạng</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Mã NCC</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Tên NCC</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Điểm đánh giá tổng thể</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Giá cả</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Nhóm hàng cung cấp</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td style="border:1px solid #ccc; padding:6px;">1</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">99</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;"></td>
+                                  <td style="border:1px solid #ccc; padding:6px;"></td>
+                                  <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
+                                </tr>
+                              </tbody>
+                              </table>
+                              <div/>
+                              <h3 style="margin-top:20px;">Top 5 Nhà cung cấp có điểm xếp hạng thấp</h3>
+                            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                              <thead>
+                                <tr style="background:#f1f1f1;">
+                                  <th style="border:1px solid #ccc; padding:6px;">Xếp hạng</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Mã NCC</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Tên NCC</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Điểm đánh giá tổng thể</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Giá cả</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
+                                  <th style="border:1px solid #ccc; padding:6px;">Nhóm hàng cung cấp</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td style="border:1px solid #ccc; padding:6px;">1</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">99</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
+                                  <td style="border:1px solid #ccc; padding:6px;"></td>
+                                  <td style="border:1px solid #ccc; padding:6px;"></td>
+                                  <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <div style="font-family:Arial, sans-serif; font-size:14px; color:#333; padding:10px;">
+                                <p><em>*Đây là email tự động từ hệ thống. Anh/Chị vui lòng không reply lại email này.</em></p>
+                                <p style="margin-top:20px;">Trân trọng,</p>
+                                <p><strong>CTCP Bia-Rượu-NGK Hà Nội</strong></p>
+                            </div>
+                          </div>`
+                });
+
+                var oHtmlContent_TPKD = new sap.ui.core.HTML({
+                    content: `<div style="padding:10px;">
+                        <h2 style="color:red;">Template Email cho ${sJTName}</h2>
+                        <p>Kính gửi Anh/Chị,</p>
+                        <p>Báo cáo anh/chị kết quả đánh giá định kỳ Nhà cung cấp của công ty tại kỳ đánh giá 11 năm 2025 như sau:</p>
+                        <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:20px;">
+                        <thead>
+                        <tr>
+                            <td colspan="10" style="border:1px solid #ccc; padding:8px; background:#eaeaea; font-weight:bold; text-align:left;">
+                                Xếp hạng theo Giá cả
+                            </td>
+                        </tr>
+                        <tr style="background:#f1f1f1;">
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Xếp hạng</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Mã NCC</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Tên NCC</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Điểm Tiêu chí</th>
+                          <th style="border:1px solid #ccc; padding:6px;" colspan="5">Trong đó</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Nhóm hàng cung cấp</th>
+                        </tr>
+                        <tr style="background:#f9f9f9;">
+                          <th style="border:1px solid #ccc; padding:6px;">Mức giá</th>
+                          <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
+                          <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
+                          <th style="border:1px solid #ccc; padding:6px;">.</th>
+                          <th style="border:1px solid #ccc; padding:6px;">.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style="border:1px solid #ccc; padding:6px;">1</td>
+                          <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
+                          <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
+                          <td style="border:1px solid #ccc; padding:6px;">100</td>
+                          <td style="border:1px solid #ccc; padding:6px;">99</td>
+                          <td style="border:1px solid #ccc; padding:6px;">100</td>
+                          <td style="border:1px solid #ccc; padding:6px;">100</td>
+                          <td style="border:1px solid #ccc; padding:6px;"></td>
+                          <td style="border:1px solid #ccc; padding:6px;"></td>
+                          <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:20px;">
+                        <thead>
+                        <tr>
+                            <td colspan="10" style="border:1px solid #ccc; padding:8px; background:#eaeaea; font-weight:bold; text-align:left;">
+                                Xếp hạng theo Chất lượng
+                            </td>
+                        </tr>
+                        <tr style="background:#f1f1f1;">
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Xếp hạng</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Mã NCC</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Tên NCC</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Điểm Tiêu chí</th>
+                          <th style="border:1px solid #ccc; padding:6px;" colspan="5">Trong đó</th>
+                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Nhóm hàng cung cấp</th>
+                        </tr>
+                        <tr style="background:#f9f9f9;">
+                          <th style="border:1px solid #ccc; padding:6px;">Mức giá</th>
+                          <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
+                          <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
+                          <th style="border:1px solid #ccc; padding:6px;">.</th>
+                          <th style="border:1px solid #ccc; padding:6px;">.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      </tbody>
+                    </table>
+                    <p>.</p>
+                    <p>.</p>
+                    <p>.</p>
+                        <div style="font-family:Arial, sans-serif; font-size:14px; color:#333; padding:10px;">
+                            <p><em>*Đây là email tự động từ hệ thống. Anh/Chị vui lòng không reply lại email này.</em></p>
+                            <p style="margin-top:20px;">Trân trọng,</p>
+                            <p><strong>CTCP Bia-Rượu-NGK Hà Nội</strong></p>
+                        </div>
+                      </div>`
+                      });
+                if (sJTCode === "GD") {
+                    var oDialog = new sap.m.Dialog({
+                        title: "Template Email",
+                        content: [oHtmlContent_GD],
+                        endButton: new sap.m.Button({
+                            text: "Đóng",
+                            press: function () {
+                                oDialog.close();
+                            }
+                        })
+                    });
+                    oDialog.open();
+
+                } else if (sJTCode === "TPKD") {
+                    var oDialog = new sap.m.Dialog({
+                        title: "Template Email",
+                        content: [oHtmlContent_TPKD],
+                        endButton: new sap.m.Button({
+                            text: "Đóng",
+                            press: function () {
+                                oDialog.close();
+                            }
+                        })
+                    });
+                    oDialog.open();
+                }
+            }
         });
     });

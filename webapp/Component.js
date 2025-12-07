@@ -3,10 +3,10 @@
  */
 
 sap.ui.define([
-        "sap/ui/core/UIComponent",
-        "sap/ui/Device",
-        "freestyleui5fiori/freestyleui5fiori/model/models"
-    ],
+    "sap/ui/core/UIComponent",
+    "sap/ui/Device",
+    "freestyleui5fiori/freestyleui5fiori/model/models"
+],
     function (UIComponent, Device, models) {
         "use strict";
 
@@ -29,6 +29,10 @@ sap.ui.define([
 
                 // set the device model
                 this.setModel(models.createDeviceModel(), "device");
+
+                // // gắn ODataModel thủ công để chắc chắn
+                // var oModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV/");
+                // this.setModel(oModel); // default model
             }
         });
     }
