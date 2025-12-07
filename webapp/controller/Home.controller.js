@@ -25,6 +25,16 @@ sap.ui.define([
             onTabSelect: function (oEvent) {
                 var sKey = oEvent.getParameter("key");
                 this._updateToolbarVisibility(sKey);
+
+                var oVBox = this.byId("idVbox3");      // VBox chứa bộ lọc tìm kiếm
+
+                if (sKey === "emails") {
+                    // Ẩn bộ lọc khi chọn tab email
+                    oVBox.setVisible(false);
+                } else {
+                    // Hiện lại bộ lọc khi chọn tab khác
+                    oVBox.setVisible(true);
+                }
             },
 
             _updateToolbarVisibility: function (sKey) {
@@ -173,7 +183,7 @@ sap.ui.define([
                     JT_NAME: sNewName,
                     JT_CODE: sNewCode
                 };
-                console.log(oModel, sPath);
+
                 oModel.update(sPath, oUpdatedData, {
                     success: function () {
                         MessageToast.show("Cập nhật thành công");
@@ -279,7 +289,7 @@ sap.ui.define([
                     sap.m.MessageToast.show("Dòng được chọn phải có Email và Tên Cán Bộ và Tên Chức Danh");
                     return;
                 }
-                console.log(oData.CREATE_TIME);
+
                 var oModel = this.getView().getModel();
                 oModel.create("/User_EmailSet", {
                     EMAIL: oData.EMAIL,
@@ -294,7 +304,6 @@ sap.ui.define([
                         sap.m.MessageToast.show("Có lỗi xảy ra khi gửi email.");
                     }
                 });
-                console.log(oData.EMAIL, oData.JT_CODE, oData.UserName);
             },
 
             onValueHelpCode: function () {
