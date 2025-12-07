@@ -34,6 +34,7 @@
                 <Key>
                     <PropertyRef Name="NO"/>
                 </Key>
+                <Property Name="MESSAGE" Type="Edm.String" Nullable="true" MaxLength="99999" sap:unicode="false" sap:label="Message"/>
                 <Property Name="EMAIL_CC" Type="Edm.String" MaxLength="1" sap:unicode="false" sap:label="Được CC"/>
                 <Property Name="NO" Type="Edm.Int16" Nullable="false" sap:unicode="false" sap:label="No" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false"/>
                 <Property Name="TYPE_EMAIL_SEND" Type="Edm.String" MaxLength="7" sap:unicode="false" sap:label="Kiểu Email Gửi"/>

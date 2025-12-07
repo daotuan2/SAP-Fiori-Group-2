@@ -263,8 +263,40 @@ sap.ui.define([
             },
 
             onSendEmail: function () {
-                MessageToast.show("Gửi email đã được gọi");
+                var oTable = this.byId("emailTreeTable");
+                var oSelected = oTable.getSelectedIndex();
+
+                if (oSelected < 0) {
+                    sap.m.MessageToast.show("Vui lòng chọn một dòng để gửi email");
+                    return;
+                }
+
+                var oContext = oTable.getContextByIndex(oSelected);
+                var oData = oContext.getObject();
+
+                // Kiểm tra bắt buộc phải có EMAIL, JT_CODE, UserName
+                if (!oData.EMAIL || !oData.JT_CODE || !oData.UserName) {
+                    sap.m.MessageToast.show("Dòng được chọn phải có Email và Tên Cán Bộ và Tên Chức Danh");
+                    return;
+                }
+                console.log(oData.CREATE_TIME);
+                var oModel = this.getView().getModel();
+                oModel.create("/User_EmailSet", {
+                    EMAIL: oData.EMAIL,
+                    JT_CODE: oData.JT_CODE,
+                    UserName: oData.UserName,
+                    CREATE_TIME: oData.CREATE_TIME
+                }, {
+                    success: function () {
+                        sap.m.MessageToast.show("Email đã được gửi thành công!");
+                    },
+                    error: function () {
+                        sap.m.MessageToast.show("Có lỗi xảy ra khi gửi email.");
+                    }
+                });
+                console.log(oData.EMAIL, oData.JT_CODE, oData.UserName);
             },
+
             onValueHelpCode: function () {
                 //lấy data từ front end thì nhanh hơn nhiều
                 var oView = this.getView();
@@ -575,7 +607,7 @@ sap.ui.define([
                             <p><strong>CTCP Bia-Rượu-NGK Hà Nội</strong></p>
                         </div>
                       </div>`
-                      });
+                });
                 if (sJTCode === "GD") {
                     var oDialog = new sap.m.Dialog({
                         title: "Template Email",
