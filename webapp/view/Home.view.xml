@@ -15,7 +15,6 @@
                     <Input id="searchName" width="250px" showValueHelp="true" valueHelpRequest="onValueHelpName" class="sapUiSmallMarginBegin"/>
 
                     <Button id="idbutton6" text="Go" type="Emphasized" press="onSearch" class="sapUiSmallMarginBegin"/>
-                    <!-- <Link id="idlink5" text="Adapt Filters" class="sapUiSmallMarginBegin" press="onAdaptFilters"/> -->
                 </HBox>
             </VBox>
 
