@@ -1,10 +1,20 @@
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
   <Dialog id="createDialog" title="Thêm chức danh mới" type="Message">
     <VBox id="idVbox2" class="sapUiSmallMargin">
-      <Label id="idLable4" text="Mã Chức Danh Mới"/>
+      <Label id="idLable4" text="Mã Chức Danh Mới" required="true"/>
       <Input id="createCode"/>
-      <Label id="idLable3" text="Tên Chức Danh Mới"/>
+      <Label id="idLable3" text="Tên Chức Danh Mới" required="true"/>
       <Input id="createName"/>
+      <Label id="idLable8" text="Trạng Thái" required="true"/>
+      <!-- Dropdown thay cho Input --> 
+      <Select id="createStatus" forceSelection="true" required="true"> 
+      <items> 
+      <core:Item id='core1' key="ACTIVE" text="Kích hoạt"/> 
+      <core:Item id='core2' key="INACTIVE" text="Không kích hoạt"/> 
+      </items> 
+      </Select>
+      <Label id="idLable5" text="Ghi Chú"/>
+      <TextArea id="createNote" rows="4" width="100%" placeholder="Nhập ghi chú tại đây..." maxLength="255"/>
     </VBox>
     <beginButton>
       <Button id="idButton3" text="Lưu" press="onConfirmCreate"/>

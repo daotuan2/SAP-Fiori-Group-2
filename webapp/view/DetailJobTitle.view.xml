@@ -1,0 +1,60 @@
+<mvc:View
+    controllerName="freestyleui5fiori.freestyleui5fiori.controller.Detail"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:form="sap.ui.layout.form"
+    displayBlock="true">
+
+    <Page id="detailPage" title="Chi tiết chức danh">
+        <content>
+            <form:SimpleForm
+                id="simpleform1"
+                editable="false"
+                layout="ColumnLayout"
+                labelSpanXL="12"
+                labelSpanL="12"
+                labelSpanM="12"
+                adjustLabelSpan="false"
+                emptySpanXL="0"
+                emptySpanL="0"
+                emptySpanM="0"
+                columnsXL="3"
+                columnsL="2"
+                columnsM="2"
+                class="sapUiSmallMargin">
+
+                <Label id="lblCode" text="Mã chức danh" />
+                <Text id="txtCode" text="{JobTitleModel>JT_CODE}" />
+
+                <Label id="lblName" text="Tên chức danh" />
+                <Text id="txtName" text="{JobTitleModel>JT_NAME}" />
+
+                <Label id="lblStatus" text="Trạng thái" />
+                <ObjectStatus
+                    id="statusObj"
+                    text="{JobTitleModel>STATUS}"
+                    state="{= ${JobTitleModel>STATUS} === 'ACTIVE' ? 'Success' : 'Error'}" />
+
+                <Label id="lblNote" text="Ghi chú" />
+                <Text id="txtNote" text="{JobTitleModel>NOTE}" />
+
+                <Label id="lblCreatedDate" text="Ngày tạo" />
+                <Text
+                    id="txtCreatedDate"
+                    text="{path: 'JobTitleModel>CREATED_DATE', formatter: '.formatter.formatDateTime'}" />
+
+                <Label id="lblCreatedBy" text="Người tạo" />
+                <Text id="txtCreatedBy" text="{JobTitleModel>CREATED_BY}" />
+
+                <Label id="lblUpdatedDate" text="Ngày cập nhật" />
+                <Text
+                    id="txtUpdatedDate"
+                    text="{path: 'JobTitleModel>UPDATED_DATE', formatter: '.formatter.formatDateTime'}" />
+
+                <Label id="lblUpdatedBy" text="Người cập nhật" />
+                <Text id="txtUpdatedBy" text="{JobTitleModel>UPDATED_BY}" />
+
+            </form:SimpleForm>
+        </content>
+    </Page>
+</mvc:View>

@@ -3,8 +3,18 @@
     <VBox id="idVbox" class="sapUiSmallMargin">
       <Label id="idLable2" text="Mã chức danh mới"/>
       <Input id="inputCode" value="" editable="false"/>
-      <Label id="idLable1" text="Tên chức danh mới"/>
+      <Label id="idLable1" text="Tên chức danh mới" required="true"/>
       <Input id="inputName" value=""/>
+      <!-- Dropdown thay cho Input --> 
+      <Select id="inputStatus" forceSelection="true" required="true"> 
+      <items> 
+      <core:Item id='core3' key="ACTIVE" text="Kích hoạt"/> 
+      <core:Item id='core4' key="INACTIVE" text="Không kích hoạt"/> 
+      </items> 
+      </Select>
+      <Label id="idLable9" text="Ghi Chú"/>
+      <TextArea id="inputNote" rows="4" width="100%" placeholder="Nhập ghi chú tại đây..." maxLength="255"/>
+    
     </VBox>
     <beginButton>
       <Button id="idbt1" text="Lưu" press="onConfirmUpdate"/>

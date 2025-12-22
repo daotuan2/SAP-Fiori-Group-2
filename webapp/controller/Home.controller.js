@@ -2,10 +2,10 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/m/MessageToast",
     "sap/ui/core/Fragment",
-    "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator"
+    "sap/m/MessageBox",
+    "sap/ui/model/json/JSONModel",
 ],
-    function (Controller, MessageToast, Fragment, Filter, FilterOperator) {
+    function (Controller, MessageToast, Fragment, MessageBox, JSONModel) {
         "use strict";
 
         return Controller.extend("freestyleui5fiori.freestyleui5fiori.controller.Home", {
@@ -19,7 +19,146 @@ sap.ui.define([
                 // Gọi hàm xử lý giống như khi select
                 this._updateToolbarVisibility(sKey);
 
+                var that = this;
+
+                //Stores products data and indexes data
+                var oProductsModel = new JSONModel({
+                    productsData: [],
+                    isProductsDataLoading: true,
+                    tableData: [],
+                    startIndex: 0,
+                    endIndex: 0,
+                    noOfTableRows: 5,
+                    page: 0,
+                    totalPages: 0,
+                });
+                that.getView().setModel(oProductsModel, "ProductsModel");
+
+                //Stores Nav buttons enable properties
+                var oNavModel = new JSONModel({
+                    firstPageBtnEnable: false,
+                    nextPageBtnEnable: false
+                });
+                that.getView().setModel(oNavModel, "NavModel");
+
+                var oModel = that.getOwnerComponent().getModel("JobTitleModel");
+                oModel.read("/Job_Title_EntitySet", {
+                    success: function (oData) {
+                        var oPM = that.getView().getModel("ProductsModel");
+                        oPM.setProperty("/productsData", oData.results);
+                        oPM.setProperty("/currentData", oData.results); // thêm dòng này
+
+                        oPM.setProperty("/isProductsDataLoading", false);
+                        var noOfTableRows = parseInt(oPM.getProperty("/noOfTableRows"));
+                        oPM.setProperty("/totalPages", Math.ceil(oData.results.length / noOfTableRows));
+                        that.onFirstPress();
+
+                    },
+                    error: function (oError) {
+                        that.getView().getModel("ProductsModel").setProperty("/isProductsDataLoading", false);
+                    }
+                });
                 this._setDataTreeTable();
+            },
+
+            onFirstPress: function () {
+                var oPM = this.getView().getModel("ProductsModel");
+                var data = oPM.getProperty("/currentData"); // dùng currentData
+                var pageSize = parseInt(oPM.getProperty("/noOfTableRows"));
+                var newData = data.slice(0, pageSize);
+                this.fnSetTableData(newData, 0, newData.length - 1, 1); // endIndex theo độ dài thực tế
+            },
+
+            onPreviousPress: function () {
+                var oPM = this.getView().getModel("ProductsModel");
+                var data = oPM.getProperty("/currentData");
+                var pageSize = parseInt(oPM.getProperty("/noOfTableRows"));
+                var startIndex = oPM.getProperty("/startIndex");
+                var newStart = Math.max(0, startIndex - pageSize);
+                var newEnd = newStart + pageSize; // không vượt quá độ dài
+                var newData = data.slice(newStart, newEnd);
+                this.fnSetTableData(newData, newStart, newStart + newData.length - 1, oPM.getProperty("/page") - 1);
+            },
+
+            onNextPress: function () {
+                var oPM = this.getView().getModel("ProductsModel");
+                var data = oPM.getProperty("/currentData");
+                var pageSize = parseInt(oPM.getProperty("/noOfTableRows"));
+                var endIndex = oPM.getProperty("/endIndex");
+                var newStart = endIndex + 1;
+                var newEnd = newStart + pageSize;
+                var newData = data.slice(newStart, newEnd);
+                if (newData.length === 0) { return; } // không có trang tiếp
+                this.fnSetTableData(newData, newStart, newStart + newData.length - 1, oPM.getProperty("/page") + 1);
+            },
+
+            onLastPress: function () {
+                var oPM = this.getView().getModel("ProductsModel");
+                var data = oPM.getProperty("/currentData");
+                var pageSize = parseInt(oPM.getProperty("/noOfTableRows"));
+                var remainder = data.length % pageSize;
+                var startIndex = remainder === 0 ? data.length - pageSize : data.length - remainder;
+                var newData = data.slice(startIndex);
+                this.fnSetTableData(newData, startIndex, startIndex + newData.length - 1, Math.ceil(data.length / pageSize));
+            },
+
+
+            //Sets the table data
+            fnSetTableData: function (newData, startIndex, endIndex, page) {
+                var that = this;
+                that.getView().getModel("ProductsModel").setProperty("/tableData", newData);
+                that.getView().getModel("ProductsModel").setProperty("/startIndex", startIndex);
+                that.getView().getModel("ProductsModel").setProperty("/endIndex", endIndex);
+                //Sets Current page count
+                that.getView().getModel("ProductsModel").setProperty("/page", page);
+                //To Enable the nav bottons
+                that.fnNavButtonsEnable();
+            },
+
+            fnNavButtonsEnable: function () {
+                var oPM = this.getView().getModel("ProductsModel");
+                var iPage = oPM.getProperty("/page");
+                var iTotalPages = oPM.getProperty("/totalPages");
+
+                var oNav = this.getView().getModel("NavModel");
+                oNav.setProperty("/nextPageBtnEnable", iPage < iTotalPages);
+                oNav.setProperty("/firstPageBtnEnable", iPage > 1);
+            },
+
+            formatter: {
+                statusText: function (sStatus) {
+                    return sStatus === "ACTIVE" ? "Kích hoạt" : "Không kích hoạt";
+                },
+                statusState: function (sStatus) {
+                    return sStatus === "ACTIVE" ? "Success" : "Error";
+                },
+                formatDateTime: function (sDateTime) {
+                    if (!sDateTime) return "";
+                    var oDate = new Date(sDateTime);
+                    var iDay = oDate.getDate().toString().padStart(2, '0');
+                    var iMonth = (oDate.getMonth() + 1).toString().padStart(2, '0');
+                    var iYear = oDate.getFullYear();
+                    var iHours = oDate.getHours().toString().padStart(2, '0');
+                    var iMinutes = oDate.getMinutes().toString().padStart(2, '0');
+                    var iSeconds = oDate.getSeconds().toString().padStart(2, '0');
+                    return iDay + "/" + iMonth + "/" + iYear + " " + iHours + ":" + iMinutes + ":" + iSeconds;
+                }
+            },
+            onRowSelect: function (oEvent) {
+                var oItem = oEvent.getParameter("listItem");
+                this.byId("jobTable").setSelectedItem(oItem);
+            },
+
+            onRowButton: function (oEvent) {
+                var oItem = oEvent.getSource().getParent(); // ColumnListItem
+                // Lấy context từ ProductsModel vì bảng đang binding vào ProductsModel>/tableData
+                var oCtx = oItem.getBindingContext("ProductsModel");
+                var sCode = oCtx.getProperty("JT_CODE");
+
+                var oRouter = this.getOwnerComponent().getRouter();
+                oRouter.navTo("RouteDetail", {
+                    JT_CODE: sCode
+                });
             },
 
             onTabSelect: function (oEvent) {
@@ -59,45 +198,57 @@ sap.ui.define([
 
                 }
             },
+
             _setDataTreeTable: function () {
-                var oModel = this.getOwnerComponent().getModel(); // luôn có default model
-                var that = this; //Lưu this ra biến
+                var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+                var that = this;
+
                 oModel.metadataLoaded().then(function () {
-                    oModel.read("/User_EmailSet", {
+                    oModel.read("/USER_EMAILSet", {
                         success: function (oData) {
                             var groupedCompany = {};
 
                             oData.results.forEach(function (item) {
-                                var company = item.Company_Code;
+                                var company = item.COMPANY_CODE;
                                 var jtCode = item.JT_CODE;
                                 var jtName = item.JT_NAME;
+
+                                // Bỏ qua nếu không có thông tin cán bộ
+                                if (!item.EMAIL && !item.USERNAME) {
+                                    return;
+                                }
 
                                 // Tạo node công ty
                                 if (!groupedCompany[company]) {
                                     groupedCompany[company] = {
-                                        Company_Code: company,
+                                        COMPANY_CODE: company,
                                         children: {}
                                     };
                                 }
 
-                                // Tạo node nhóm chức danh theo JT_CODE
+                                // Tạo node nhóm chức danh
                                 if (!groupedCompany[company].children[jtCode]) {
                                     groupedCompany[company].children[jtCode] = {
                                         JT_CODE: jtCode,
-                                        JT_NAME: jtName, // dùng để hiển thị
-                                        children: []
+                                        JT_NAME: jtName,
+                                        children: [] // sẽ chứa leaf nodes
                                     };
                                 }
 
-                                // Thêm email vào nhóm chức danh
-                                groupedCompany[company].children[jtCode].children.push(item);
+                                // Thêm leaf node (không có children nữa)
+                                groupedCompany[company].children[jtCode].children.push({
+                                    EMAIL: item.EMAIL,
+                                    USERNAME: item.USERNAME,
+                                    USERNAME_CODE: item.USERNAME_CODE
+                                    // Không thêm children => leaf node
+                                });
                             });
 
                             // Chuyển thành mảng nodes
                             var treeData = {
                                 nodes: Object.values(groupedCompany).map(function (companyNode) {
                                     return {
-                                        Company_Code: companyNode.Company_Code,
+                                        COMPANY_CODE: companyNode.COMPANY_CODE,
                                         children: Object.values(companyNode.children)
                                     };
                                 })
@@ -119,18 +270,53 @@ sap.ui.define([
                     return;
                 }
 
-                // Lấy đường dẫn binding của dòng được chọn
-                var sPath = oSelected.getBindingContext().getPath();
-                var oModel = this.getView().getModel();
+                // 1. Hiển thị busy indicator (dấu 3 chấm) cho bảng
+                oTable.setBusy(true);
+                var oItemData = oSelected.getBindingContext("ProductsModel").getObject();
+                var sCode = oItemData.JT_CODE;
 
-                // Gọi OData remove
-                oModel.remove(sPath, {
-                    success: function () {
-                        MessageToast.show("Xóa thành công");
-                    },
-                    error: function () {
-                        MessageToast.show("Xóa thất bại");
-                    }
+                var oODataModel = this.getOwnerComponent().getModel("JobTitleModel");
+                var sPath = "/Job_Title_EntitySet('" + sCode + "')";
+
+                MessageBox.confirm("Bạn có chắc chắn muốn xóa chức danh này không?", {
+                    title: "Xác nhận xóa",
+                    actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+                    emphasizedAction: MessageBox.Action.YES,
+                    onClose: function (sAction) {
+                        if (sAction === MessageBox.Action.YES) {
+
+                            // 2. Gửi request xóa lên backend
+                            oODataModel.remove(sPath, {
+                                success: function () {
+                                    // 3. Cập nhật lại dữ liệu ProductsModel
+                                    var oProductsModel = this.getView().getModel("ProductsModel");
+                                    var aAllData = oProductsModel.getProperty("/productsData");
+                                    var aNewAllData = aAllData.filter(function (item) {
+                                        return item.JT_CODE !== sCode;
+                                    });
+                                    oProductsModel.setProperty("/productsData", aNewAllData);
+
+                                    // Cập nhật lại trang hiện tại
+                                    var iPage = oProductsModel.getProperty("/page");
+                                    var iPageSize = oProductsModel.getProperty("/noOfTableRows");
+                                    var iStart = (iPage - 1) * iPageSize;
+                                    var iEnd = iStart + iPageSize;
+                                    var aPageData = aNewAllData.slice(iStart, iEnd);
+
+                                    oProductsModel.setProperty("/tableData", aPageData);
+                                    oProductsModel.setProperty("/startIndex", iStart);
+                                    oProductsModel.setProperty("/endIndex", iEnd - 1);
+                                    oProductsModel.setProperty("/totalPages", Math.ceil(aNewAllData.length / iPageSize));
+                                    MessageToast.show("Xóa thành công");
+                                    oTable.setBusy(false);
+                                }.bind(this),
+                                error: function () {
+                                    MessageToast.show("Xóa thất bại");
+                                    oTable.setBusy(false);
+                                }.bind(this)
+                            });
+                        }
+                    }.bind(this)
                 });
             },
 
@@ -144,9 +330,11 @@ sap.ui.define([
                 }
 
                 var oView = this.getView();
-                var oContext = oSelected.getBindingContext();
+                var oContext = oSelected.getBindingContext("ProductsModel"); // lấy từ ProductsModel
                 var sCode = oContext.getProperty("JT_CODE");
                 var sName = oContext.getProperty("JT_NAME");
+                var sStatus = oContext.getProperty("STATUS");
+                var sNote = oContext.getProperty("NOTE");
 
                 if (!this._oDialog) {
                     Fragment.load({
@@ -156,51 +344,81 @@ sap.ui.define([
                     }).then(function (oDialog) {
                         this._oDialog = oDialog;
                         oView.addDependent(this._oDialog);
-                        // Gán dữ liệu vào input
                         this.byId("inputCode").setValue(sCode);
                         this.byId("inputName").setValue(sName);
+                        this.byId("inputStatus").setSelectedKey(sStatus);
+                        this.byId("inputNote").setValue(sNote);
                         this._oDialog.open();
                     }.bind(this));
                 } else {
-                    // Gán dữ liệu mỗi lần mở
                     this.byId("inputCode").setValue(sCode);
                     this.byId("inputName").setValue(sName);
+                    this.byId("inputStatus").setSelectedKey(sStatus);
+                    this.byId("inputNote").setValue(sNote);
                     this._oDialog.open();
                 }
 
-                // Lưu lại binding context để dùng khi update
-                this._oSelectedContext = oSelected.getBindingContext();
+                // Lưu lại JT_CODE để dùng khi update
+                this._sSelectedCode = sCode;
             },
 
             onConfirmUpdate: function () {
-                var oModel = this.getView().getModel();
-                var sPath = this._oSelectedContext.getPath();
+                var oTable = this.byId("jobTable");
+                // 1. Hiển thị busy indicator (dấu 3 chấm) cho bảng
+                oTable.setBusy(true);
+                var oODataModel = this.getOwnerComponent().getModel("JobTitleModel"); // ODataModel
 
                 var sNewName = this.byId("inputName").getValue();
                 var sNewCode = this.byId("inputCode").getValue();
+                var sNewStatus = this.byId("inputStatus").getSelectedKey();
+                var sNewNote = this.byId("inputNote").getValue();
 
                 var oUpdatedData = {
                     JT_NAME: sNewName,
-                    JT_CODE: sNewCode
+                    JT_CODE: sNewCode,
+                    STATUS: sNewStatus,
+                    NOTE: sNewNote
                 };
 
-                var that = this;
-                oModel.update(sPath, oUpdatedData, {
+                var sPath = "/Job_Title_EntitySet('" + this._sSelectedCode + "')"; // build path từ JT_CODE
+
+                oODataModel.update(sPath, oUpdatedData, {
                     success: function () {
-                        MessageToast.show("Cập nhật thành công");
-                        that._setDataTreeTable();
-                    },
+                        // Sau khi update, reload lại dữ liệu OData
+                        oODataModel.read("/Job_Title_EntitySet", {
+                            success: function (oData) {
+                                var oProductsModel = this.getView().getModel("ProductsModel");
+                                oProductsModel.setProperty("/productsData", oData.results);
+                                oProductsModel.setProperty("/totalPages", Math.ceil(oData.results.length / oProductsModel.getProperty("/noOfTableRows")));
+
+                                // Giữ nguyên trang hiện tại
+                                var iPage = oProductsModel.getProperty("/page");
+                                var iPageSize = oProductsModel.getProperty("/noOfTableRows");
+                                var iStart = (iPage - 1) * iPageSize;
+                                var iEnd = iStart + iPageSize;
+                                var aPageData = oData.results.slice(iStart, iEnd);
+
+                                oProductsModel.setProperty("/tableData", aPageData);
+                                oProductsModel.setProperty("/startIndex", iStart);
+                                oProductsModel.setProperty("/endIndex", iEnd - 1);
+                                MessageToast.show("Cập nhật thành công");
+                                oTable.setBusy(false);
+                            }.bind(this)
+                        });
+                    }.bind(this),
                     error: function () {
                         MessageToast.show("Cập nhật thất bại");
+                        oTable.setBusy(false);
                     }
                 });
-
 
                 this._oDialog.close();
             },
 
             onCancelUpdate: function () {
                 this._oDialog.close();
+                this._oDialog.destroy();
+                this._oDialog = null;
             },
             onOpenCreateDialog: function () {
                 var oView = this.getView();
@@ -221,59 +439,99 @@ sap.ui.define([
             },
 
             onConfirmCreate: function () {
-                var oModel = this.getView().getModel();
+                var oTable = this.byId("jobTable");
+                var sCode = this.byId("createCode").getValue().trim();
+                var sName = this.byId("createName").getValue().trim();
+                var sStatus = this.byId("createStatus").getSelectedKey();
+                var sNote = this.byId("createNote").getValue().trim();
 
-                var sName = this.byId("createName").getValue();
-                var sCode = this.byId("createCode").getValue();
+                if (!sCode || !sName || !sStatus) {
+                    MessageToast.show("Vui lòng nhập đầy đủ thông tin bắt buộc.");
+                    return;
+                }
+                if (sStatus !== "ACTIVE" && sStatus !== "INACTIVE") {
+                    MessageToast.show("Trạng thái không hợp lệ.");
+                    return;
+                }
 
+                var aAllData = this.getView().getModel("ProductsModel").getProperty("/productsData") || [];
+                var bExists = aAllData.some(function (oItem) {
+                    return oItem.JT_CODE.toUpperCase() === sCode.toUpperCase();
+                });
+                if (bExists) {
+                    MessageToast.show("Mã chức danh đã tồn tại.");
+                    return;
+                }
+                // 1. Hiển thị busy indicator (dấu 3 chấm) cho bảng
+                oTable.setBusy(true);
+
+                var oODataModel = this.getOwnerComponent().getModel("JobTitleModel"); // ODataModel
                 var oNewData = {
+                    NOTE: sNote,
+                    STATUS: sStatus,
                     JT_NAME: sName,
                     JT_CODE: sCode
                 };
 
-                oModel.create("/Job_Title_EntitySet", oNewData, {
+                oODataModel.create("/Job_Title_EntitySet", oNewData, {
                     success: function () {
-                        MessageToast.show("Tạo mới thành công");
-                    },
+                        // Sau khi tạo mới, đọc lại toàn bộ dữ liệu từ OData
+                        oODataModel.read("/Job_Title_EntitySet", {
+                            success: function (oData) {
+                                var oProductsModel = this.getView().getModel("ProductsModel");
+                                oProductsModel.setProperty("/productsData", oData.results);
+                                oProductsModel.setProperty("/totalPages", Math.ceil(oData.results.length / oProductsModel.getProperty("/noOfTableRows")));
+
+                                // Reset về trang đầu tiên
+                                this.onFirstPress();
+                                MessageToast.show("Tạo mới thành công");
+                                oTable.setBusy(false);
+                            }.bind(this)
+                        });
+                    }.bind(this),
                     error: function () {
                         MessageToast.show("Tạo mới thất bại");
+                        oTable.setBusy(false);
                     }
                 });
-
                 this._oCreateDialog.close();
             },
+
 
             onCancelCreate: function () {
                 this._oCreateDialog.close();
             },
 
             onSearch: function () {
-                //Chỉ filter trên front end
                 var sCode = this.byId("searchCode").getValue().toLowerCase();
                 var sName = this.byId("searchName").getValue().toLowerCase();
-                var oTable = this.byId("jobTable");
+                var oPM = this.getView().getModel("ProductsModel");
 
-                // Lấy tất cả items hiện có trong bảng
-                var aItems = oTable.getItems();
-
-                aItems.forEach(function (oItem) {
-                    var oCells = oItem.getCells();
-                    var sItemCode = oCells[0].getText().toLowerCase(); // cột JT_CODE
-                    var sItemName = oCells[1].getText().toLowerCase(); // cột JT_NAME
-
+                var aAllData = oPM.getProperty("/productsData"); // dữ liệu gốc
+                var aFiltered = aAllData.filter(function (item) {
                     var bMatch = true;
-
-                    if (sCode) {
-                        bMatch = bMatch && sItemCode.includes(sCode);
-                    }
-                    if (sName) {
-                        bMatch = bMatch && sItemName.includes(sName);
-                    }
-
-                    // Ẩn/hiện item theo kết quả lọc
-                    oItem.setVisible(bMatch);
+                    if (sCode) { bMatch = bMatch && item.JT_CODE.toLowerCase().includes(sCode); }
+                    if (sName) { bMatch = bMatch && item.JT_NAME.toLowerCase().includes(sName); }
+                    return bMatch;
                 });
+
+                // cập nhật dữ liệu đang dùng
+                oPM.setProperty("/currentData", aFiltered);
+
+                // reset paging theo dữ liệu lọc
+                var pageSize = parseInt(oPM.getProperty("/noOfTableRows"));
+                var aPageData = aFiltered.slice(0, pageSize);
+
+                oPM.setProperty("/tableData", aPageData);
+                oPM.setProperty("/startIndex", 0);
+                oPM.setProperty("/endIndex", aPageData.length - 1);
+                oPM.setProperty("/page", 1);
+                oPM.setProperty("/totalPages", Math.ceil(aFiltered.length / pageSize));
+
+                // cập nhật nút mũi tên
+                this.fnNavButtonsEnable();
             },
+
 
             onSendEmail: function () {
                 var oTable = this.byId("emailTreeTable");
@@ -310,10 +568,8 @@ sap.ui.define([
             },
 
             onValueHelpCode: function () {
-                //lấy data từ front end thì nhanh hơn nhiều
                 var oView = this.getView();
-                var oJobTable = this.byId("jobTable");
-                var aItems = oJobTable.getItems(); // lấy list hiện có trên frontend
+                var aAllData = oView.getModel("ProductsModel").getProperty("/productsData"); // toàn bộ dữ liệu
 
                 if (!this._oValueHelpDialogCode) {
                     Fragment.load({
@@ -324,19 +580,14 @@ sap.ui.define([
                         this._oValueHelpDialogCode = oDialog;
                         oView.addDependent(this._oValueHelpDialogCode);
 
-                        // đổ dữ liệu từ jobTable vào valueHelpTableCode
                         var oValueHelpTable = this.byId("valueHelpTableCode");
                         oValueHelpTable.removeAllItems();
 
-                        aItems.forEach(function (oItem) {
-                            var oCells = oItem.getCells();
-                            var sCode = oCells[0].getText();
-                            var sName = oCells[1].getText();
-
+                        aAllData.forEach(function (oEntry) {
                             oValueHelpTable.addItem(new sap.m.ColumnListItem({
                                 cells: [
-                                    new sap.m.Text({ text: sCode }),
-                                    new sap.m.Text({ text: sName })
+                                    new sap.m.Text({ text: oEntry.JT_CODE }),
+                                    new sap.m.Text({ text: oEntry.JT_NAME })
                                 ]
                             }));
                         });
@@ -347,15 +598,11 @@ sap.ui.define([
                     var oValueHelpTable = this.byId("valueHelpTableCode");
                     oValueHelpTable.removeAllItems();
 
-                    aItems.forEach(function (oItem) {
-                        var oCells = oItem.getCells();
-                        var sCode = oCells[0].getText();
-                        var sName = oCells[1].getText();
-
+                    aAllData.forEach(function (oEntry) {
                         oValueHelpTable.addItem(new sap.m.ColumnListItem({
                             cells: [
-                                new sap.m.Text({ text: sCode }),
-                                new sap.m.Text({ text: sName })
+                                new sap.m.Text({ text: oEntry.JT_CODE }),
+                                new sap.m.Text({ text: oEntry.JT_NAME })
                             ]
                         }));
                     });
@@ -364,20 +611,21 @@ sap.ui.define([
                 }
             },
 
+
             onSelectValueHelpCode: function (oEvent) {
                 var oSelected = oEvent.getParameter("listItem");
                 if (oSelected) {
                     var sCode = oSelected.getCells()[0].getText(); // lấy JT_CODE
                     this.byId("searchCode").setValue(sCode);       // gán vào Input
                     this._oValueHelpDialogCode.close();            // đóng dialog
+                    this.onSearch();
                 }
             },
 
             onValueHelpName: function () {
-                //lấy data từ front end thì nhanh hơn nhiều
                 var oView = this.getView();
-                var oJobTable = this.byId("jobTable");
-                var aItems = oJobTable.getItems(); // lấy list hiện có trên frontend
+                // lấy toàn bộ dữ liệu từ ProductsModel>/productsData
+                var aAllData = oView.getModel("ProductsModel").getProperty("/productsData");
 
                 if (!this._oValueHelpDialogName) {
                     Fragment.load({
@@ -388,19 +636,14 @@ sap.ui.define([
                         this._oValueHelpDialogName = oDialog;
                         oView.addDependent(this._oValueHelpDialogName);
 
-                        // đổ dữ liệu từ jobTable vào valueHelpTableName
                         var oValueHelpTable = this.byId("valueHelpTableName");
                         oValueHelpTable.removeAllItems();
 
-                        aItems.forEach(function (oItem) {
-                            var oCells = oItem.getCells();
-                            var sCode = oCells[0].getText();
-                            var sName = oCells[1].getText();
-
+                        aAllData.forEach(function (oEntry) {
                             oValueHelpTable.addItem(new sap.m.ColumnListItem({
                                 cells: [
-                                    new sap.m.Text({ text: sCode }),
-                                    new sap.m.Text({ text: sName })
+                                    new sap.m.Text({ text: oEntry.JT_CODE }),
+                                    new sap.m.Text({ text: oEntry.JT_NAME })
                                 ]
                             }));
                         });
@@ -411,15 +654,11 @@ sap.ui.define([
                     var oValueHelpTable = this.byId("valueHelpTableName");
                     oValueHelpTable.removeAllItems();
 
-                    aItems.forEach(function (oItem) {
-                        var oCells = oItem.getCells();
-                        var sCode = oCells[0].getText();
-                        var sName = oCells[1].getText();
-
+                    aAllData.forEach(function (oEntry) {
                         oValueHelpTable.addItem(new sap.m.ColumnListItem({
                             cells: [
-                                new sap.m.Text({ text: sCode }),
-                                new sap.m.Text({ text: sName })
+                                new sap.m.Text({ text: oEntry.JT_CODE }),
+                                new sap.m.Text({ text: oEntry.JT_NAME })
                             ]
                         }));
                     });
@@ -428,12 +667,14 @@ sap.ui.define([
                 }
             },
 
+
             onSelectValueHelpName: function (oEvent) {
                 var oSelected = oEvent.getParameter("listItem");
                 if (oSelected) {
                     var sName = oSelected.getCells()[1].getText(); // lấy JT_NAME
                     this.byId("searchName").setValue(sName);       // gán vào Input
                     this._oValueHelpDialogName.close();            // đóng dialog
+                    this.onSearch();
                 }
             },
 
@@ -459,193 +700,49 @@ sap.ui.define([
                     return;
                 }
 
-                // Nếu có nhóm chức danh → mở popup
-                this._showTemplatePopup(sJTName, sJTCode);
+                // gọi hàm hiển thị template
+                this._showTemplatePopup(sJTCode);
             },
 
-            _showTemplatePopup: function (sJTName, sJTCode) {
-                var oHtmlContent_GD = new sap.ui.core.HTML({
-                    content: `
-                            <div style="padding:10px;">
-                            <h2 style="color:red;">Template Email cho ${sJTName}</h2>
-                            <p>Kính gửi Anh/Chị,</p>
-                            <p>Báo cáo anh/chị kết quả đánh giá định kỳ Nhà cung cấp của công ty tại kỳ đánh giá 12 năm 2025 như sau:</p>
-                            <h3 style="margin-top:20px;">Top 5 Nhà cung cấp có điểm xếp hạng cao</h3>
-                            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                              <thead>
-                                <tr style="background:#f1f1f1;">
-                                  <th style="border:1px solid #ccc; padding:6px;">Xếp hạng</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Mã NCC</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Tên NCC</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Điểm đánh giá tổng thể</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Giá cả</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Nhóm hàng cung cấp</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td style="border:1px solid #ccc; padding:6px;">1</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">99</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;"></td>
-                                  <td style="border:1px solid #ccc; padding:6px;"></td>
-                                  <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
-                                </tr>
-                              </tbody>
-                              </table>
-                              <div/>
-                              <h3 style="margin-top:20px;">Top 5 Nhà cung cấp có điểm xếp hạng thấp</h3>
-                            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                              <thead>
-                                <tr style="background:#f1f1f1;">
-                                  <th style="border:1px solid #ccc; padding:6px;">Xếp hạng</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Mã NCC</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Tên NCC</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Điểm đánh giá tổng thể</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Giá cả</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">.</th>
-                                  <th style="border:1px solid #ccc; padding:6px;">Nhóm hàng cung cấp</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td style="border:1px solid #ccc; padding:6px;">1</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">99</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;">100</td>
-                                  <td style="border:1px solid #ccc; padding:6px;"></td>
-                                  <td style="border:1px solid #ccc; padding:6px;"></td>
-                                  <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            <div style="font-family:Arial, sans-serif; font-size:14px; color:#333; padding:10px;">
-                                <p><em>*Đây là email tự động từ hệ thống. Anh/Chị vui lòng không reply lại email này.</em></p>
-                                <p style="margin-top:20px;">Trân trọng,</p>
-                                <p><strong>CTCP Bia-Rượu-NGK Hà Nội</strong></p>
-                            </div>
-                          </div>`
-                });
+            _showTemplatePopup: function (sJTCode) {
+                var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+                // Hiện busy indicator toàn màn hình 
+                sap.ui.core.BusyIndicator.show(0);
 
-                var oHtmlContent_TPKD = new sap.ui.core.HTML({
-                    content: `<div style="padding:10px;">
-                        <h2 style="color:red;">Template Email cho ${sJTName}</h2>
-                        <p>Kính gửi Anh/Chị,</p>
-                        <p>Báo cáo anh/chị kết quả đánh giá định kỳ Nhà cung cấp của công ty tại kỳ đánh giá 11 năm 2025 như sau:</p>
-                        <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:20px;">
-                        <thead>
-                        <tr>
-                            <td colspan="10" style="border:1px solid #ccc; padding:8px; background:#eaeaea; font-weight:bold; text-align:left;">
-                                Xếp hạng theo Giá cả
-                            </td>
-                        </tr>
-                        <tr style="background:#f1f1f1;">
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Xếp hạng</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Mã NCC</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Tên NCC</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Điểm Tiêu chí</th>
-                          <th style="border:1px solid #ccc; padding:6px;" colspan="5">Trong đó</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Nhóm hàng cung cấp</th>
-                        </tr>
-                        <tr style="background:#f9f9f9;">
-                          <th style="border:1px solid #ccc; padding:6px;">Mức giá</th>
-                          <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
-                          <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
-                          <th style="border:1px solid #ccc; padding:6px;">.</th>
-                          <th style="border:1px solid #ccc; padding:6px;">.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td style="border:1px solid #ccc; padding:6px;">1</td>
-                          <td style="border:1px solid #ccc; padding:6px;">0000200028</td>
-                          <td style="border:1px solid #ccc; padding:6px;">Công ty TNHH Bao Bì Thủy Tinh Vigla</td>
-                          <td style="border:1px solid #ccc; padding:6px;">100</td>
-                          <td style="border:1px solid #ccc; padding:6px;">99</td>
-                          <td style="border:1px solid #ccc; padding:6px;">100</td>
-                          <td style="border:1px solid #ccc; padding:6px;">100</td>
-                          <td style="border:1px solid #ccc; padding:6px;"></td>
-                          <td style="border:1px solid #ccc; padding:6px;"></td>
-                          <td style="border:1px solid #ccc; padding:6px;">Bao bì, đóng gói</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:20px;">
-                        <thead>
-                        <tr>
-                            <td colspan="10" style="border:1px solid #ccc; padding:8px; background:#eaeaea; font-weight:bold; text-align:left;">
-                                Xếp hạng theo Chất lượng
-                            </td>
-                        </tr>
-                        <tr style="background:#f1f1f1;">
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Xếp hạng</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Mã NCC</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Tên NCC</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Điểm Tiêu chí</th>
-                          <th style="border:1px solid #ccc; padding:6px;" colspan="5">Trong đó</th>
-                          <th style="border:1px solid #ccc; padding:6px;" rowspan="2">Nhóm hàng cung cấp</th>
-                        </tr>
-                        <tr style="background:#f9f9f9;">
-                          <th style="border:1px solid #ccc; padding:6px;">Mức giá</th>
-                          <th style="border:1px solid #ccc; padding:6px;">Chất lượng sản phẩm</th>
-                          <th style="border:1px solid #ccc; padding:6px;">Thời gian giao hàng</th>
-                          <th style="border:1px solid #ccc; padding:6px;">.</th>
-                          <th style="border:1px solid #ccc; padding:6px;">.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      </tbody>
-                    </table>
-                    <p>.</p>
-                    <p>.</p>
-                    <p>.</p>
-                        <div style="font-family:Arial, sans-serif; font-size:14px; color:#333; padding:10px;">
-                            <p><em>*Đây là email tự động từ hệ thống. Anh/Chị vui lòng không reply lại email này.</em></p>
-                            <p style="margin-top:20px;">Trân trọng,</p>
-                            <p><strong>CTCP Bia-Rượu-NGK Hà Nội</strong></p>
-                        </div>
-                      </div>`
-                });
-                if (sJTCode === "GD") {
-                    var oDialog = new sap.m.Dialog({
-                        title: "Template Email",
-                        content: [oHtmlContent_GD],
-                        endButton: new sap.m.Button({
-                            text: "Đóng",
-                            press: function () {
-                                oDialog.close();
-                            }
-                        })
-                    });
-                    oDialog.open();
+                oModel.read("/EMAIL_TEMPLATESet", {
+                    success: function (oData) {
+                        sap.ui.core.BusyIndicator.hide(); // tắt busy khi xong
+                        // tìm template theo JT_CODE
+                        var sTemplateId = sJTCode.toUpperCase(); // chuẩn hóa
+                        var oTemplate = oData.results.find(function (tpl) {
+                            return tpl.TEMPLATE_ID.toUpperCase() === sTemplateId;
+                        });
 
-                } else if (sJTCode === "TPKD") {
-                    var oDialog = new sap.m.Dialog({
-                        title: "Template Email",
-                        content: [oHtmlContent_TPKD],
-                        endButton: new sap.m.Button({
-                            text: "Đóng",
-                            press: function () {
-                                oDialog.close();
-                            }
-                        })
-                    });
-                    oDialog.open();
-                }
+                        if (oTemplate) {
+                            var oHtmlContent = new sap.ui.core.HTML({
+                                content: oTemplate.HTML_CONTENT // field từ OData
+                            });
+
+                            var oDialog = new sap.m.Dialog({
+                                title: "Template Email",
+                                content: [oHtmlContent],
+                                endButton: new sap.m.Button({
+                                    text: "Đóng",
+                                    press: function () {
+                                        oDialog.close();
+                                    }
+                                })
+                            });
+                            oDialog.open();
+                        } else {
+                            sap.m.MessageToast.show("Chưa có template tương ứng cho chức danh " + sJTCode);
+                        }
+                    },
+                    error: function () {
+                        sap.ui.core.BusyIndicator.hide(); // tắt busy khi xong
+                        sap.m.MessageToast.show("Không thể tải dữ liệu template từ OData");
+                    }
+                });
             }
         });
     });

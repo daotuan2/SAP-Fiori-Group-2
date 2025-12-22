@@ -29,23 +29,55 @@
 
             <!-- Tab danh sách -->
             <!-- UI5 tự động gọi OData service và binding dữ liệu vào bảng -->
-            <IconTabBar id="mainTabBar" class="sapUiSmallMarginTop"  select="onTabSelect">
+            <IconTabBar id="mainTabBar" class="sapUiSmallMarginTop"  select="onTabSelect" applyContentPadding="true">
                 <items>
-                    <IconTabFilter id="idicontabfilter" text="Danh sách chức danh" key="titles" icon="sap-icon://employee">
-                        <Table id="jobTable" items="{/Job_Title_EntitySet}" mode="SingleSelectMaster">
+                    <IconTabFilter id="idicontabfilter" text="Danh sách chức danh" key="titles" icon="sap-icon://employee" >
+                        <!-- <Table id="jobTable" items="{ProductsModel>/Job_Title_EntitySet}" mode="SingleSelectMaster" selectionChange="onRowPress"> -->
+                        <Table id="jobTable"
+                                busy="{ProductsModel>/isProductsDataLoading}"
+                                items="{ path: 'ProductsModel>/tableData'}"
+                                mode="SingleSelectMaster"
+                                selectionChange="onRowSelect"
+                                inset="false"
+                                showSeparators="All"
+                                alternateRowColors="true"
+                                class="sapUiResponsiveMargin">
                             <columns>
                                 <Column id="idcolumn1"><Text id="idtext1" text="Mã chức danh"/></Column>
                                 <Column id="idcolumn2"><Text id="idtext2" text="Tên chức danh"/></Column>
+                                <Column id="idcolumn4"><Text id="idtext5" text="Trạng thái"/></Column>
+                                <Column id="idcolumn9"><Text id="idtext6" text="Người tạo"/></Column>
+                                <Column id="idcolumn10"><Text id="idtext7" text="Ngày tạo"/></Column>
+                                <!-- Cột mới cho nút detail --> 
+                                <Column id="idcolumn11" hAlign="Center" width="3rem"> <Text id="idtext13" text=""/> </Column>
                             </columns>
                             <items>
-                                <ColumnListItem id="idcolumnlistitem1">
+                                <ColumnListItem id="idcolumnlistitem1"
+                                                type="Inactive"
+                                                highlight="None"
+                                                vAlign="Middle">
                                     <cells>
-                                        <Text id="idtext3" text="{JT_CODE}"/>
-                                        <Text id="idtext4" text="{JT_NAME}"/>
+                                        <Text id="idtext3" text="{ProductsModel>JT_CODE}"/>
+                                        <Text id="idtext4" text="{ProductsModel>JT_NAME}"/>
+                                        <ObjectStatus id='objectstatus1' 
+                                        text="{path: 'ProductsModel>STATUS', formatter: '.formatter.statusText'}" 
+                                        state="{path: 'ProductsModel>STATUS', formatter: '.formatter.statusState'}"/>
+                                        <Text id="idtext15" text="{ProductsModel>CREATED_BY}"/>
+                                        <Text id="idtext17" text="{path: 'ProductsModel>CREATED_DATE', formatter: '.formatter.formatDateTime'}"/>
+                                        <!-- Nút mũi tên --> 
+                                        <Button id='button1' icon="sap-icon://navigation-right-arrow" type="Transparent" press="onRowButton"/>
                                     </cells>
                                 </ColumnListItem>
                             </items>
                         </Table>
+                        <OverflowToolbar id='overflow1'>
+                        <ToolbarSpacer id='toolbar1'/>
+                        <Button id="BtnFirstPressId" icon="sap-icon://close-command-field" press="onFirstPress" tooltip="First" enabled="{NavModel>/firstPageBtnEnable}" />
+                        <Button id="BtnPreviousPressId" icon="sap-icon://navigation-left-arrow" press="onPreviousPress" tooltip="Previous" enabled="{NavModel>/firstPageBtnEnable}" />
+                        <Text id="PageTextId" text="{i18n>page} {ProductsModel>/page} {i18n>of} {ProductsModel>/totalPages}" />
+                        <Button id="BtnNextPressId" icon="sap-icon://navigation-right-arrow" press="onNextPress" tooltip="Next" enabled="{NavModel>/nextPageBtnEnable}" />
+                        <Button id="BtnLastPressId" icon="sap-icon://open-command-field" press="onLastPress" tooltip="Last" enabled="{NavModel>/nextPageBtnEnable}" />
+                        </OverflowToolbar>
                     </IconTabFilter>
 
                     <!-- Tab danh sách email -->
@@ -53,17 +85,31 @@
                     <IconTabFilter id="idicontabfilter1" text="Danh sách email người dùng" key="emails" icon="sap-icon://email">
                         <table:TreeTable id="emailTreeTable" rows="{tree>/nodes}" selectionMode="Single" visibleRowCount="15">
                             <table:columns>
-                                <table:Column id="idcol1">
+                                <table:Column id="idcol1" width="8rem">
                                     <Label id="idla1" text="Công Ty"/>
                                     <table:template>
-                                        <Text id="idte1" text="{tree>Company_Code}"/>
+                                        <Text id="idte1" text="{tree>COMPANY_CODE}"/>
                                     </table:template>
                                 </table:Column>
 
-                                <table:Column id="idcol2">
+                                <table:Column id="idcol2" width="12rem">
                                     <Label id="idla2" text="Nhóm Chức Danh"/>
                                     <table:template>
                                         <Text id="idte2" text="{tree>JT_NAME}"/>
+                                    </table:template>
+                                </table:Column>
+
+                                <table:Column id="idcol5">
+                                    <Label id="idla5" text="Mã Cán Bộ"/>
+                                    <table:template>
+                                        <Text id="idte5" text="{tree>USERNAME_CODE}"/>
+                                    </table:template>
+                                </table:Column>
+
+                                <table:Column id="idcol4">
+                                    <Label id="idla4" text="Tên Cán Bộ"/>
+                                    <table:template>
+                                        <Text id="idte4" text="{tree>USERNAME}"/>
                                     </table:template>
                                 </table:Column>
 
@@ -71,13 +117,6 @@
                                     <Label id="idla3" text="Email"/>
                                     <table:template>
                                         <Text id="idte3" text="{tree>EMAIL}"/>
-                                    </table:template>
-                                </table:Column>
-
-                                <table:Column id="idcol4">
-                                    <Label id="idla4" text="Tên Cán Bộ"/>
-                                    <table:template>
-                                        <Text id="idte4" text="{tree>UserName}"/>
                                     </table:template>
                                 </table:Column>
                             </table:columns>

@@ -17,7 +17,16 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "/sap/opu/odata/sap/ZODATA_GR2_SAP490_SRV/",
+        "uri": "/sap/opu/odata/sap/ZJOB_TITLE_SRV/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "2.0"
+        }
+      },
+      "userEmailService": {
+        "uri": "/sap/opu/odata/sap/ZUSER_EMAIL_INFO_SRV/",
         "type": "OData",
         "settings": {
           "annotations": [],
@@ -63,8 +72,17 @@
           "bundleName": "freestyleui5fiori.freestyleui5fiori.i18n.i18n"
         }
       },
-      "": {
+      "JobTitleModel": {
         "dataSource": "mainService",
+        "type": "sap.ui.model.odata.v2.ODataModel",
+        "preload": true,
+        "settings": {
+          "defaultBindingMode": "TwoWay",
+          "defaultCountMode": "Inline"
+        }
+      },
+      "UserEmailModel": {
+        "dataSource": "userEmailService",
         "type": "sap.ui.model.odata.v2.ODataModel",
         "preload": true,
         "settings": {
@@ -97,6 +115,13 @@
           "target": [
             "TargetHome"
           ]
+        },
+        {
+          "pattern": "detail/{JT_CODE}",
+          "name": "RouteDetail",
+          "target": [
+            "TargetDetail"
+          ]
         }
       ],
       "targets": {
@@ -106,6 +131,11 @@
           "clearControlAggregation": false,
           "viewId": "Home",
           "viewName": "Home"
+        },
+        "TargetDetail": {
+          "viewName": "DetailJobTitle",
+          "viewId": "DetailJobTitle",
+          "viewType": "XML"
         }
       }
     },
