@@ -207,6 +207,7 @@ sap.ui.define([
                     oModel.read("/USER_EMAILSet", {
                         success: function (oData) {
                             var groupedCompany = {};
+                            var flatUsers = []; // 👉 danh sách phẳng
 
                             oData.results.forEach(function (item) {
                                 var company = item.COMPANY_CODE;
@@ -242,6 +243,12 @@ sap.ui.define([
                                     USERNAME_CODE: item.USERNAME_CODE
                                     // Không thêm children => leaf node
                                 });
+                                // 👉 Đồng thời push vào danh sách phẳng 
+                                flatUsers.push({
+                                    EMAIL: item.EMAIL,
+                                    USERNAME: item.USERNAME,
+                                    USERNAME_CODE: item.USERNAME_CODE
+                                });
                             });
 
                             // Chuyển thành mảng nodes
@@ -256,6 +263,10 @@ sap.ui.define([
 
                             var oTreeModel = new sap.ui.model.json.JSONModel(treeData);
                             that.getOwnerComponent().setModel(oTreeModel, "tree");
+
+                            // Flat user model 
+                            var oAllUsersModel = new sap.ui.model.json.JSONModel({ results: flatUsers });
+                            that.getOwnerComponent().setModel(oAllUsersModel, "AllUsersModel");
                         }.bind(this)
                     });
                 });
@@ -270,7 +281,6 @@ sap.ui.define([
                     return;
                 }
 
-                // 1. Hiển thị busy indicator (dấu 3 chấm) cho bảng
                 oTable.setBusy(true);
                 var oItemData = oSelected.getBindingContext("ProductsModel").getObject();
                 var sCode = oItemData.JT_CODE;
@@ -284,21 +294,32 @@ sap.ui.define([
                     emphasizedAction: MessageBox.Action.YES,
                     onClose: function (sAction) {
                         if (sAction === MessageBox.Action.YES) {
-
-                            // 2. Gửi request xóa lên backend
                             oODataModel.remove(sPath, {
                                 success: function () {
-                                    // 3. Cập nhật lại dữ liệu ProductsModel
                                     var oProductsModel = this.getView().getModel("ProductsModel");
                                     var aAllData = oProductsModel.getProperty("/productsData");
                                     var aNewAllData = aAllData.filter(function (item) {
                                         return item.JT_CODE !== sCode;
                                     });
-                                    oProductsModel.setProperty("/productsData", aNewAllData);
 
-                                    // Cập nhật lại trang hiện tại
-                                    var iPage = oProductsModel.getProperty("/page");
+                                    oProductsModel.setProperty("/productsData", aNewAllData);
+                                    oProductsModel.setProperty("/currentData", aNewAllData); // cập nhật luôn currentData
+
                                     var iPageSize = oProductsModel.getProperty("/noOfTableRows");
+                                    var newTotalPages = Math.ceil(aNewAllData.length / iPageSize);
+                                    oProductsModel.setProperty("/totalPages", newTotalPages);
+
+                                    // Nếu page hiện tại > tổng số trang mới thì lùi về trang cuối
+                                    var iPage = oProductsModel.getProperty("/page");
+                                    if (iPage > newTotalPages) {
+                                        iPage = newTotalPages;
+                                    }
+
+                                    // Nếu không còn dữ liệu nào thì reset về trang đầu
+                                    if (newTotalPages === 0) {
+                                        iPage = 1;
+                                    }
+
                                     var iStart = (iPage - 1) * iPageSize;
                                     var iEnd = iStart + iPageSize;
                                     var aPageData = aNewAllData.slice(iStart, iEnd);
@@ -306,7 +327,8 @@ sap.ui.define([
                                     oProductsModel.setProperty("/tableData", aPageData);
                                     oProductsModel.setProperty("/startIndex", iStart);
                                     oProductsModel.setProperty("/endIndex", iEnd - 1);
-                                    oProductsModel.setProperty("/totalPages", Math.ceil(aNewAllData.length / iPageSize));
+                                    oProductsModel.setProperty("/page", iPage);
+
                                     MessageToast.show("Xóa thành công");
                                     oTable.setBusy(false);
                                 }.bind(this),
@@ -319,6 +341,7 @@ sap.ui.define([
                     }.bind(this)
                 });
             },
+
 
             onOpenUpdateDialog: function () {
                 var oTable = this.byId("jobTable");
@@ -462,7 +485,7 @@ sap.ui.define([
                     MessageToast.show("Mã chức danh đã tồn tại.");
                     return;
                 }
-                // 1. Hiển thị busy indicator (dấu 3 chấm) cho bảng
+
                 oTable.setBusy(true);
 
                 var oODataModel = this.getOwnerComponent().getModel("JobTitleModel"); // ODataModel
@@ -480,10 +503,20 @@ sap.ui.define([
                             success: function (oData) {
                                 var oProductsModel = this.getView().getModel("ProductsModel");
                                 oProductsModel.setProperty("/productsData", oData.results);
-                                oProductsModel.setProperty("/totalPages", Math.ceil(oData.results.length / oProductsModel.getProperty("/noOfTableRows")));
+                                oProductsModel.setProperty("/currentData", oData.results);
 
-                                // Reset về trang đầu tiên
-                                this.onFirstPress();
+                                var noOfTableRows = oProductsModel.getProperty("/noOfTableRows");
+                                var totalPages = Math.ceil(oData.results.length / noOfTableRows);
+                                oProductsModel.setProperty("/totalPages", totalPages);
+
+                                // Giữ nguyên trang hiện tại
+                                var currentPage = oProductsModel.getProperty("/page") || 1;
+                                var startIndex = (currentPage - 1) * noOfTableRows;
+                                var endIndex = Math.min(startIndex + noOfTableRows, oData.results.length);
+                                var newData = oData.results.slice(startIndex, endIndex);
+
+                                this.fnSetTableData(newData, startIndex, endIndex - 1, currentPage);
+
                                 MessageToast.show("Tạo mới thành công");
                                 oTable.setBusy(false);
                             }.bind(this)
@@ -494,9 +527,9 @@ sap.ui.define([
                         oTable.setBusy(false);
                     }
                 });
+
                 this._oCreateDialog.close();
             },
-
 
             onCancelCreate: function () {
                 this._oCreateDialog.close();
@@ -530,41 +563,6 @@ sap.ui.define([
 
                 // cập nhật nút mũi tên
                 this.fnNavButtonsEnable();
-            },
-
-
-            onSendEmail: function () {
-                var oTable = this.byId("emailTreeTable");
-                var oSelected = oTable.getSelectedIndex();
-
-                if (oSelected < 0) {
-                    sap.m.MessageToast.show("Vui lòng chọn một dòng để gửi email");
-                    return;
-                }
-
-                var oContext = oTable.getContextByIndex(oSelected);
-                var oData = oContext.getObject();
-
-                // Kiểm tra bắt buộc phải có EMAIL, JT_CODE, UserName
-                if (!oData.EMAIL || !oData.JT_CODE || !oData.UserName) {
-                    sap.m.MessageToast.show("Dòng được chọn phải có Email và Tên Cán Bộ và Tên Chức Danh");
-                    return;
-                }
-
-                var oModel = this.getView().getModel();
-                oModel.create("/User_EmailSet", {
-                    EMAIL: oData.EMAIL,
-                    JT_CODE: oData.JT_CODE,
-                    UserName: oData.UserName,
-                    CREATE_TIME: oData.CREATE_TIME
-                }, {
-                    success: function () {
-                        sap.m.MessageToast.show("Email đã được gửi thành công!");
-                    },
-                    error: function () {
-                        sap.m.MessageToast.show("Có lỗi xảy ra khi gửi email.");
-                    }
-                });
             },
 
             onValueHelpCode: function () {
@@ -743,6 +741,374 @@ sap.ui.define([
                         sap.m.MessageToast.show("Không thể tải dữ liệu template từ OData");
                     }
                 });
+            },
+
+            onSendEmail: function () {
+                var oTable = this.byId("emailTreeTable");
+                var iSelected = oTable.getSelectedIndex();
+                if (iSelected < 0) {
+                    MessageToast.show("Vui lòng chọn một dòng để gửi email");
+                    return;
+                }
+
+                var oCtx = oTable.getContextByIndex(iSelected);
+                var oData = oCtx.getObject();
+
+                if (!oData.EMAIL || !oData.USERNAME) {
+                    MessageToast.show("Dòng được chọn phải có Email và Tên Cán Bộ");
+                    return;
+                }
+
+                var oView = this.getView();
+
+                // 👉 Lấy model tổng hợp đã tạo trong onInit 
+                var oAllUserModel = this.getOwnerComponent().getModel("AllUsersModel");
+                var aAllUsers = oAllUserModel.getProperty("/results");
+                // 👉 Lọc bỏ người nhận chính 
+                var aFilteredUsers = aAllUsers.filter(function (user) {
+                    return user.EMAIL !== oData.EMAIL;
+                });
+                // 👉 Tạo model mới cho CC 
+                var oUserModel = new sap.ui.model.json.JSONModel({
+                    results: aFilteredUsers
+                });
+                oView.setModel(oUserModel, "UserModel");
+
+                if (!this._oPreviewDialog) {
+                    Fragment.load({
+                        id: oView.getId(),
+                        name: "freestyleui5fiori.freestyleui5fiori.view.fragment.PreviewEmailDialog",
+                        controller: this
+                    }).then(function (oDialog) {
+                        this._oPreviewDialog = oDialog;
+                        oView.addDependent(this._oPreviewDialog);
+                        // 👉 Set busy ngay khi mở 
+                        this._oPreviewDialog.setBusy(true);
+
+                        // Load template list từ OData
+                        var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+                        oModel.read("/EMAIL_TEMPLATESet", {
+                            success: function (oData) {
+                                var oTemplateModel = new sap.ui.model.json.JSONModel(oData);
+                                oView.setModel(oTemplateModel, "TemplateModel");
+
+                                // 👉 Mặc định chọn dòng đầu tiên
+                                if (oData.results && oData.results.length > 0) {
+                                    var sFirstId = oData.results[0].TEMPLATE_ID;
+                                    this.byId("templateSelect").setSelectedKey(sFirstId);
+
+                                    // Nếu không phải CVMS thì ẩn và clear input
+                                    if (sFirstId !== "CVMS") {
+                                        this._resetCvmsInputs();
+                                        this.byId("cvmsInputs").setVisible(false);
+                                    } else {
+                                        this.byId("cvmsInputs").setVisible(true);
+                                    }
+                                    this._oPreviewDialog.setBusy(false);
+                                }
+                            }.bind(this),
+                            error: function () {
+                                MessageToast.show("Không load được danh sách template");
+                                this._oPreviewDialog.setBusy(false);
+                            }.bind(this)
+                        });
+
+                        this._selectedEmailData = oData; // lưu lại dòng chọn
+                        this.byId("toText").setText(oData.USERNAME + " <" + oData.EMAIL + ">");
+                        this._oPreviewDialog.open();
+                    }.bind(this));
+                } else {
+                    // 👉 Set busy ngay khi mở 
+                    this._oPreviewDialog.setBusy(true);
+                    // Nếu không phải CVMS thì ẩn và clear input
+                    if (this.byId("templateSelect").getSelectedKey() !== "CVMS") {
+                        this._resetCvmsInputs();
+                        this.byId("cvmsInputs").setVisible(false);
+                    } else {
+                        this.byId("cvmsInputs").setVisible(true);
+                    }
+                    this._selectedEmailData = oData;
+                    this.byId("toText").setText(oData.USERNAME + " <" + oData.EMAIL + ">");
+                    this._oPreviewDialog.open();
+                    this._oPreviewDialog.setBusy(false);
+                }
+
+            },
+
+            onConfirmSendMail: function () {
+                var sTemplateId = this.byId("templateSelect").getSelectedKey();
+                var aCcItems = this.byId("ccSelect").getSelectedKeys();
+                var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+
+                // 👉 Lấy thông tin TO từ biến đã lưu khi mở popup 
+                var sEmailTo = this._selectedEmailData.EMAIL; var sNameTo = this._selectedEmailData.USERNAME;
+                // 👉 Tạo string JSON đúng format 
+                var sToString = `"to": [{ "email": "${sEmailTo}", "name": "${sNameTo}" }],`;
+
+                // 👉 Lấy danh sách CC từ MultiComboBox
+                var oCcSelect = this.byId("ccSelect");
+                var aSelectedItems = oCcSelect.getSelectedItems();
+
+                var aCcArray = aSelectedItems.map(function (oItem) {
+                    return {
+                        email: oItem.getKey(),
+                        name: oItem.getText()
+                    };
+                });
+
+                // 👉 Tạo string JSON cho CC
+                var sCcString = "";
+                if (aCcArray.length > 0) {
+                    sCcString = `"cc": [` + aCcArray.map(function (cc) {
+                        return `{ "email": "${cc.email}", "name": "${cc.name}" }`;
+                    }).join(",") + `],`;
+                }
+
+                var params = {
+                    TEMPLATE_ID: sTemplateId,
+                    EMAIL_TO: sToString,
+                    EMAIL_CC: sCcString,
+                    MATERIAL_DOC_LOW: "",
+                    MATERIAL_DOC_HIGH: "",
+                    POSTING_DATE_LOW: "",
+                    POSTING_DATE_HIGH: "",
+                    MODE: "SEND"
+                };
+
+                if (sTemplateId === "CVMS") {
+                    var sPostingDateFrom = this.byId("postingDateFrom").getValue();
+                    var sPostingDateTo = this.byId("postingDateTo").getValue();
+                    var sMaterialDocFrom = this.byId("materialDocFrom").getValue();
+                    var sMaterialDocTo = this.byId("materialDocTo").getValue();
+
+                    // 👉 Validate bắt buộc
+                    if (!sPostingDateFrom) {
+                        MessageToast.show("Vui lòng nhập Posting Date From");
+                        return;
+                    }
+                    if (!sPostingDateTo) {
+                        MessageToast.show("Vui lòng nhập Posting Date To");
+                        return;
+                    }
+                    if (!sMaterialDocFrom) {
+                        MessageToast.show("Vui lòng nhập Material Document From");
+                        return;
+                    }
+                    if (!sMaterialDocTo) {
+                        MessageToast.show("Vui lòng nhập Material Document To");
+                        return;
+                    }
+
+                    // 👉 Validate định dạng ngày
+                    if (!this._isValidDate(sPostingDateFrom) || !this._isValidDate(sPostingDateTo)) {
+                        MessageToast.show("Ngày nhập không đúng định dạng");
+                        return;
+                    }
+
+                    // 👉 Validate material chỉ được nhập số
+                    if (!this._isNumeric(sMaterialDocFrom) || !this._isNumeric(sMaterialDocTo)) {
+                        MessageToast.show("Material Document chỉ được nhập số");
+                        return;
+                    }
+
+                    // 👉 Format ngày thành yyyymmdd
+                    params.POSTING_DATE_LOW = this._formatDateToYYYYMMDD(sPostingDateFrom);
+                    params.POSTING_DATE_HIGH = this._formatDateToYYYYMMDD(sPostingDateTo);
+
+                    params.MATERIAL_DOC_LOW = sMaterialDocFrom;
+                    params.MATERIAL_DOC_HIGH = sMaterialDocTo;
+                }
+                this._oPreviewDialog.setBusy(true);
+                oModel.callFunction("/SEND_MAIL_FUNCTION", {
+                    method: "POST",
+                    urlParameters: params,
+                    success: function (oResponse) {
+                        if (oResponse.MESSAGE === "FAIL") {
+                            MessageToast.show("Gửi thất bại");
+                            this._oPreviewDialog.setBusy(false);
+                        } else if (oResponse.MESSAGE === "SUCCESS") {
+                            MessageToast.show("Gửi thành công");
+                            this._oPreviewDialog.setBusy(false);
+                        }
+                    }.bind(this),
+                    error: function () {
+                        sap.m.MessageToast.show("Có lỗi khi gửi email");
+                        this._oPreviewDialog.setBusy(false);
+                    }.bind(this)
+                });
+            },
+
+            onPreviewMail: function () {
+                var sTemplateId = this.byId("templateSelect").getSelectedKey();
+                var aCcItems = this.byId("ccSelect").getSelectedKeys();
+                var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+
+                var params = {
+                    TEMPLATE_ID: sTemplateId,
+                    EMAIL_TO: "null",
+                    EMAIL_CC: "null",
+                    MATERIAL_DOC_LOW: "",
+                    MATERIAL_DOC_HIGH: "",
+                    POSTING_DATE_LOW: "",
+                    POSTING_DATE_HIGH: "",
+                    MODE: "SHOW"
+                };
+
+                if (sTemplateId === "CVMS") {
+                    var sPostingDateFrom = this.byId("postingDateFrom").getValue();
+                    var sPostingDateTo = this.byId("postingDateTo").getValue();
+                    var sMaterialDocFrom = this.byId("materialDocFrom").getValue();
+                    var sMaterialDocTo = this.byId("materialDocTo").getValue();
+
+                    // 👉 Validate bắt buộc
+                    if (!sPostingDateFrom) {
+                        MessageToast.show("Vui lòng nhập Posting Date From");
+                        return;
+                    }
+                    if (!sPostingDateTo) {
+                        MessageToast.show("Vui lòng nhập Posting Date To");
+                        return;
+                    }
+                    if (!sMaterialDocFrom) {
+                        MessageToast.show("Vui lòng nhập Material Document From");
+                        return;
+                    }
+                    if (!sMaterialDocTo) {
+                        MessageToast.show("Vui lòng nhập Material Document To");
+                        return;
+                    }
+
+                    // 👉 Validate định dạng ngày
+                    if (!this._isValidDate(sPostingDateFrom) || !this._isValidDate(sPostingDateTo)) {
+                        MessageToast.show("Ngày nhập không đúng định dạng");
+                        return;
+                    }
+
+                    // 👉 Validate material chỉ được nhập số
+                    if (!this._isNumeric(sMaterialDocFrom) || !this._isNumeric(sMaterialDocTo)) {
+                        MessageToast.show("Material Document chỉ được nhập số");
+                        return;
+                    }
+
+                    // 👉 Format ngày thành yyyymmdd
+                    params.POSTING_DATE_LOW = this._formatDateToYYYYMMDD(sPostingDateFrom);
+                    params.POSTING_DATE_HIGH = this._formatDateToYYYYMMDD(sPostingDateTo);
+
+                    params.MATERIAL_DOC_LOW = sMaterialDocFrom;
+                    params.MATERIAL_DOC_HIGH = sMaterialDocTo;
+                }
+                this._oPreviewDialog.setBusy(true);
+                oModel.callFunction("/SEND_MAIL_FUNCTION", {
+                    method: "POST",
+                    urlParameters: params,
+                    success: function (oResponse) {
+                        if (oResponse.MESSAGE === "NODATA") {
+                            MessageToast.show("Không có data");
+                            this.byId("htmlPreview").setContent("");
+                            this.byId("btnSend").setEnabled(false);
+                            this._oPreviewDialog.setBusy(false);
+                        } else if (oResponse.MESSAGE === "SUCCESS") {
+                            var sHtml = `<iframe srcdoc="${oResponse.HTML_CONTENT.replace(/"/g, '&quot;')}" 
+                     width="100%" height="550px" style="border:none;"></iframe>`;
+                            this.byId("htmlPreview").setContent("");
+                            this.byId("htmlPreview").setContent(sHtml);
+
+                            // Chỉ enable nút gửi khi đã load HTML thành công
+                            this.byId("btnSend").setEnabled(true);
+                            this._oPreviewDialog.setBusy(false);
+                        } else if (oResponse.MESSAGE === "OTHER") {
+                            MessageToast.show("Lỗi Không Xác Định");
+                            this.byId("htmlPreview").setContent("");
+                            this.byId("btnSend").setEnabled(false);
+                            this._oPreviewDialog.setBusy(false);
+                        }
+                    }.bind(this),
+                    error: function () {
+                        sap.m.MessageToast.show("Có lỗi khi preview email");
+                        this.byId("htmlPreview").setContent("");
+                        this.byId("btnSend").setEnabled(false);
+                        this._oPreviewDialog.setBusy(false);
+                    }.bind(this)
+                });
+            },
+
+            _formatDateToYYYYMMDD: function (sDate) {
+                if (!sDate) return "";
+                var oDate = new Date(sDate);
+                var yyyy = oDate.getFullYear().toString();
+                var mm = (oDate.getMonth() + 1).toString().padStart(2, '0');
+                var dd = oDate.getDate().toString().padStart(2, '0');
+                return yyyy + mm + dd;
+            },
+            _isValidDate: function (sDate) {
+                if (!sDate) return false;
+                // DatePicker thường trả về chuỗi theo định dạng locale, ta thử parse
+                var oDate = new Date(sDate);
+                return !isNaN(oDate.getTime()); // nếu parse được thì hợp lệ
+            },
+            _isNumeric: function (sValue) {
+                return /^\d+$/.test(sValue); // chỉ chấp nhận ký tự số
+            },
+
+
+            onCancelPreview: function () {
+                // Đóng popup
+                this._oPreviewDialog.close();
+
+                // Reset thông tin người nhận
+                this.byId("toText").setText("");
+
+                // Reset dropdown template
+                this.byId("templateSelect").setSelectedKey(null);
+
+                // Reset CC
+                this.byId("ccSelect").removeAllSelectedItems();
+
+                // Reset các input CVMS
+                this._resetCvmsInputs();
+                this.byId("cvmsInputs").setVisible(false);
+
+                // Reset message và preview HTML
+                this.byId("messageText").setVisible(false);
+                this.byId("messageText").setText("");
+                this.byId("htmlPreview").setContent("");
+
+                // Disable nút gửi mail
+                this.byId("btnSend").setEnabled(false);
+
+                // Clear biến lưu dữ liệu dòng chọn
+                this._selectedEmailData = null;
+            },
+
+            onTemplateChange: function (oEvent) {
+                var sKey = oEvent.getParameter("selectedItem").getKey();
+                var oCvmsBox = this.byId("cvmsInputs");
+
+                if (sKey === "CVMS") {
+                    oCvmsBox.setVisible(true);
+                } else {
+                    oCvmsBox.setVisible(false);
+                }
+
+                // Khi đổi template, cần disable nút gửi cho đến khi preview lại
+                this.byId("btnSend").setEnabled(false);
+                this.byId("htmlPreview").setContent("");
+                this.byId("messageText").setVisible(false);
+            },
+
+            _resetCvmsInputs: function () {
+                this.byId("postingDateFrom").setValue("");
+                this.byId("postingDateTo").setValue("");
+                this.byId("materialDocFrom").setValue("");
+                this.byId("materialDocTo").setValue("");
+            },
+            onPostingDateChange: function () {
+                this.byId("btnSend").setEnabled(false);
+                this.byId("htmlPreview").setContent("");
+            },
+            onMaterialDocChange: function () {
+                this.byId("btnSend").setEnabled(false);
+                this.byId("htmlPreview").setContent("");
             }
         });
     });

@@ -1,0 +1,71 @@
+<Dialog id="previewEmailDialog" title="Gửi Mail" class="sapUiContentPadding"
+        contentWidth="100%" contentHeight="100%"
+        xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout">
+
+    <VBox id="vbox3" width="100%" class="sapUiSmallMargin">
+
+        <!-- Template -->
+        <HBox id="hbox1" width="100%" class="sapUiSmallMarginBottom">
+            <Label id="lb2" text="Chọn Template" width="150px"/>
+            <Select id="templateSelect" items="{TemplateModel>/results}" change="onTemplateChange" width="300px">
+                <core:Item id="itemcore2" key="{TemplateModel>TEMPLATE_ID}" text="{TemplateModel>TEMPLATE_NAME}" />
+            </Select>
+        </HBox>
+
+        <!-- TO và CC -->
+        <HBox id="hbox2" width="100%" class="sapUiSmallMarginBottom">
+            <Label id="lb1" text="Người nhận (TO)" width="150px"/>
+            <Text id="toText" text="" width="300px"/>
+
+            <Label id="lb3" text="CC Users" width="150px" class="sapUiSmallMarginBegin"/>
+            <MultiComboBox id="ccSelect" items="{UserModel>/results}" width="400px">
+                <core:Item id="itemcore1" key="{UserModel>EMAIL}" text="{UserModel>USERNAME}" />
+            </MultiComboBox>
+        </HBox>
+
+        <!-- Tham số CVMS -->
+        <Panel id="cvmsInputs" headerText="Tham số" expandable="false" visible="false" width="100%" class="sapUiSmallMarginBottom">
+            <VBox id="hbox3" width="100%" class="sapUiSmallMargin">
+
+                <!-- Hàng 1 -->
+                <HBox id="hbox4" width="100%" class="sapUiSmallMarginBottom">
+                    <Label id="lb4" text="Posting Date From" width="150px"/>
+                    <DatePicker id="postingDateFrom" width="300px" change="onPostingDateChange"/>
+
+                    <Label id="lb6" text="Material Document From" width="200px" class="sapUiSmallMarginBegin"/>
+                    <Input id="materialDocFrom" width="300px" maxLength="10" liveChange="onMaterialDocChange"/>
+                </HBox>
+
+                <!-- Hàng 2 -->
+                <HBox id="hbox5" width="100%">
+                    <Label id="lb5" text="Posting Date To" width="150px"/>
+                    <DatePicker id="postingDateTo" width="300px" change="onPostingDateChange"/>
+
+                    <Label id="lb7" text="Material Document To" width="200px" class="sapUiSmallMarginBegin"/>
+                    <Input id="materialDocTo" width="300px" maxLength="10" liveChange="onMaterialDocChange"/>
+                </HBox>
+            </VBox>
+        </Panel>
+
+        <!-- Nội dung Email -->
+        <Text id="messageText" visible="false"/>
+        <Panel id="emailPreviewPanel" headerText="Nội dung Email" expandable="false" width="100%" height="100%">
+            <content>
+                <core:HTML id="htmlPreview" content=""/>
+            </content>
+        </Panel>
+    </VBox>
+
+    <beginButton>
+        <Button id="btnSend" text="Gửi Mail" press="onConfirmSendMail" enabled="false"/>
+    </beginButton>
+    <endButton>
+        <Button id="btnhuy" text="Hủy" press="onCancelPreview"/>
+    </endButton>
+    <customHeader>
+        <Toolbar id="tool">
+            <ToolbarSpacer id="toolspc"/>
+            <Button id="btnpreview" text="Preview" press="onPreviewMail"/>
+        </Toolbar>
+    </customHeader>
+</Dialog>
