@@ -96,15 +96,14 @@
                 <EntitySet Name="USER_EMAILSet" EntityType="ZUSER_EMAIL_INFO_SRV.USER_EMAIL" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
                 <EntitySet Name="EMAIL_TEMPLATESet" EntityType="ZUSER_EMAIL_INFO_SRV.EMAIL_TEMPLATE" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
                 <FunctionImport Name="SEND_MAIL_FUNCTION" ReturnType="ZUSER_EMAIL_INFO_SRV.EMAIL_INFO" EntitySet="EMAIL_INFOSet" m:HttpMethod="POST">
+                    <Parameter Name="POSTING_DATE_LOW" Type="Edm.String" Mode="In" />
                     <Parameter Name="POSTING_DATE_HIGH" Type="Edm.String" Mode="In" />
                     <Parameter Name="MATERIAL_DOC_HIGH" Type="Edm.String" Mode="In" />
                     <Parameter Name="TEMPLATE_ID" Type="Edm.String" Mode="In" />
                     <Parameter Name="EMAIL_TO" Type="Edm.String" Mode="In" />
                     <Parameter Name="EMAIL_CC" Type="Edm.String" Mode="In" />
                     <Parameter Name="MATERIAL_DOC_LOW" Type="Edm.String" Mode="In" />
-                    <Parameter Name="HTML_CONTENT" Type="Edm.String" Mode="In" />
                     <Parameter Name="MODE" Type="Edm.String" Mode="In" />
-                    <Parameter Name="POSTING_DATE_LOW" Type="Edm.String" Mode="In" />
                 </FunctionImport>
             </EntityContainer>
             <atom:link xmlns:atom="http://www.w3.org/2005/Atom" rel="self" href="https://s35lp1.ucc.cit.tum.de:8100/sap/opu/odata/sap/ZUSER_EMAIL_INFO_SRV/$metadata" />
