@@ -45,7 +45,7 @@
                             <columns>
                                 <Column id="idcolumn1"><Text id="idtext1" text="Mã chức danh"/></Column>
                                 <Column id="idcolumn2"><Text id="idtext2" text="Tên chức danh"/></Column>
-                                <Column id="idcolumn4"><Text id="idtext5" text="Trạng thái"/></Column>
+                                <!-- <Column id="idcolumn4"><Text id="idtext5" text="Trạng thái"/></Column> -->
                                 <Column id="idcolumn9"><Text id="idtext6" text="Người tạo"/></Column>
                                 <Column id="idcolumn10"><Text id="idtext7" text="Ngày tạo"/></Column>
                                 <!-- Cột mới cho nút detail --> 
@@ -59,9 +59,9 @@
                                     <cells>
                                         <Text id="idtext3" text="{ProductsModel>JT_CODE}"/>
                                         <Text id="idtext4" text="{ProductsModel>JT_NAME}"/>
-                                        <ObjectStatus id='objectstatus1' 
+                                        <!-- <ObjectStatus id='objectstatus1' 
                                         text="{path: 'ProductsModel>STATUS', formatter: '.formatter.statusText'}" 
-                                        state="{path: 'ProductsModel>STATUS', formatter: '.formatter.statusState'}"/>
+                                        state="{path: 'ProductsModel>STATUS', formatter: '.formatter.statusState'}"/> -->
                                         <Text id="idtext15" text="{ProductsModel>CREATED_BY}"/>
                                         <Text id="idtext17" text="{path: 'ProductsModel>CREATED_DATE', formatter: '.formatter.formatDateTime'}"/>
                                         <!-- Nút mũi tên --> 

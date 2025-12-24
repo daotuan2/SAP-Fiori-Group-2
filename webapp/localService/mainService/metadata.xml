@@ -91,10 +91,17 @@
                 <Property Name="HTML_CONTENT" Type="Edm.String" Nullable="false" sap:unicode="false" />
                 <Property Name="TEMPLATE_SAMPLE_URL" Type="Edm.String" Nullable="false" MaxLength="255" sap:unicode="false" />
             </EntityType>
+            <EntityType Name="MATERIAL_INFO_SEARCH_HELP" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="BELNR" />
+                </Key>
+                <Property Name="BELNR" Type="Edm.String" Nullable="false" sap:unicode="false" />
+            </EntityType>
             <EntityContainer Name="ZUSER_EMAIL_INFO_SRV_Entities" m:IsDefaultEntityContainer="true" sap:supported-formats="atom json xlsx">
                 <EntitySet Name="EMAIL_INFOSet" EntityType="ZUSER_EMAIL_INFO_SRV.EMAIL_INFO" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
                 <EntitySet Name="USER_EMAILSet" EntityType="ZUSER_EMAIL_INFO_SRV.USER_EMAIL" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
                 <EntitySet Name="EMAIL_TEMPLATESet" EntityType="ZUSER_EMAIL_INFO_SRV.EMAIL_TEMPLATE" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
+                <EntitySet Name="MATERIAL_INFO_SEARCH_HELPSet" EntityType="ZUSER_EMAIL_INFO_SRV.MATERIAL_INFO_SEARCH_HELP" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false" sap:addressable="false" sap:content-version="1" />
                 <FunctionImport Name="SEND_MAIL_FUNCTION" ReturnType="ZUSER_EMAIL_INFO_SRV.EMAIL_INFO" EntitySet="EMAIL_INFOSet" m:HttpMethod="POST">
                     <Parameter Name="POSTING_DATE_LOW" Type="Edm.String" Mode="In" />
                     <Parameter Name="POSTING_DATE_HIGH" Type="Edm.String" Mode="In" />

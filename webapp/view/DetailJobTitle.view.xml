@@ -29,11 +29,11 @@
                 <Label id="lblName" text="Tên chức danh" />
                 <Text id="txtName" text="{JobTitleModel>JT_NAME}" />
 
-                <Label id="lblStatus" text="Trạng thái" />
-                <ObjectStatus
+                <!-- <Label id="lblStatus" text="Trạng thái" /> -->
+                <!-- <ObjectStatus
                     id="statusObj"
                     text="{JobTitleModel>STATUS}"
-                    state="{= ${JobTitleModel>STATUS} === 'ACTIVE' ? 'Success' : 'Error'}" />
+                    state="{= ${JobTitleModel>STATUS} === 'ACTIVE' ? 'Success' : 'Error'}" /> -->
 
                 <Label id="lblNote" text="Ghi chú" />
                 <Text id="txtNote" text="{JobTitleModel>NOTE}" />

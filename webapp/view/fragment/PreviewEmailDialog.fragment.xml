@@ -33,7 +33,10 @@
                     <DatePicker id="postingDateFrom" width="300px" change="onPostingDateChange"/>
 
                     <Label id="lb6" text="Material Document From" width="200px" class="sapUiSmallMarginBegin"/>
-                    <Input id="materialDocFrom" width="300px" maxLength="10" liveChange="onMaterialDocChange"/>
+                    <Input id="materialDocFrom" width="300px" maxLength="10" 
+                        showValueHelp="true" 
+                        valueHelpRequest="onMaterialDocFromValueHelp"
+                        liveChange="onMaterialDocChange"/>
                 </HBox>
 
                 <!-- Hàng 2 -->
@@ -42,7 +45,10 @@
                     <DatePicker id="postingDateTo" width="300px" change="onPostingDateChange"/>
 
                     <Label id="lb7" text="Material Document To" width="200px" class="sapUiSmallMarginBegin"/>
-                    <Input id="materialDocTo" width="300px" maxLength="10" liveChange="onMaterialDocChange"/>
+                    <Input id="materialDocTo" width="300px" maxLength="10" 
+                        showValueHelp="true" 
+                        valueHelpRequest="onMaterialDocToValueHelp"
+                        liveChange="onMaterialDocChange"/>
                 </HBox>
             </VBox>
         </Panel>

@@ -58,6 +58,19 @@ sap.ui.define([
                         that.getView().getModel("ProductsModel").setProperty("/isProductsDataLoading", false);
                     }
                 });
+
+                var oModel = this.getOwnerComponent().getModel("UserEmailModel");
+                var that = this;
+
+                oModel.read("/MATERIAL_INFO_SEARCH_HELPSet", {
+                    success: function (oData) {
+                        var oMaterialModel = new sap.ui.model.json.JSONModel({ results: oData.results });
+                        that.getView().setModel(oMaterialModel, "MaterialDocModel");
+                    },
+                    error: function () {
+                        sap.m.MessageToast.show("Không thể tải danh sách Material Document");
+                    }
+                });
                 this._setDataTreeTable();
             },
 
@@ -990,6 +1003,18 @@ sap.ui.define([
                         return;
                     }
 
+                    var oDateFrom = new Date(sPostingDateFrom);
+                    var oDateTo = new Date(sPostingDateTo);
+
+                    if (oDateFrom.getTime() > oDateTo.getTime()) {
+                        MessageToast.show("Posting Date From phải trước ngày Posting Date To");
+                        return;
+                    }
+                    if (sMaterialDocFrom > sMaterialDocTo) {
+                        MessageToast.show("Material Document From phải nhỏ hơn Material Document To");
+                        return;
+                    }
+
                     // 👉 Format ngày thành yyyymmdd
                     params.POSTING_DATE_LOW = this._formatDateToYYYYMMDD(sPostingDateFrom);
                     params.POSTING_DATE_HIGH = this._formatDateToYYYYMMDD(sPostingDateTo);
@@ -1008,6 +1033,7 @@ sap.ui.define([
                             this.byId("btnSend").setEnabled(false);
                             this._oPreviewDialog.setBusy(false);
                         } else if (oResponse.MESSAGE === "SUCCESS") {
+                            console.log(oResponse.HTML_CONTENT.replace(/"/g, '&quot;'));
                             var sHtml = `<iframe srcdoc="${oResponse.HTML_CONTENT.replace(/"/g, '&quot;')}" 
                      width="100%" height="550px" style="border:none;"></iframe>`;
                             this.byId("htmlPreview").setContent("");
@@ -1109,6 +1135,113 @@ sap.ui.define([
             onMaterialDocChange: function () {
                 this.byId("btnSend").setEnabled(false);
                 this.byId("htmlPreview").setContent("");
+            },
+
+            onMaterialDocFromValueHelp: function (oEvent) {
+                var oInput = oEvent.getSource();
+                var aAllItems = this.getView().getModel("MaterialDocModel").getProperty("/results") || [];
+
+                if (!this._oMatDocFromDlg) {
+                    var oList = new sap.m.List({
+                        mode: "SingleSelectMaster",
+                        items: {
+                            path: "/items",
+                            template: new sap.m.StandardListItem({ title: "{BELNR}" })
+                        },
+                        select: function (oEvt) {
+                            var sSelected = oEvt.getParameter("listItem").getTitle();
+                            oInput.setValue(sSelected);
+                            this._oMatDocFromDlg.close();
+                        }.bind(this)
+                    });
+
+                    var oSearch = new sap.m.SearchField({
+                        placeholder: "Nhập chuỗi cần tìm (ví dụ: 50, 00)...",
+                        search: function (oEvt) {
+                            var q = (oEvt.getParameter("query") || "").trim();
+                            var aFiltered = q
+                                ? aAllItems.filter(function (item) {
+                                    return String(item.BELNR || "").trim().includes(q);
+                                })
+                                : [];
+                            oList.setModel(new sap.ui.model.json.JSONModel({ items: aFiltered }));
+                        }
+                    });
+
+                    this._oMatDocFromDlg = new sap.m.Dialog({
+                        title: "Tìm Material Document From",
+                        contentWidth: "500px",
+                        contentHeight: "400px",
+                        content: [oSearch, oList],
+                        endButton: new sap.m.Button({
+                            text: "Đóng",
+                            press: function () { this._oMatDocFromDlg.close(); }.bind(this)
+                        }),
+                        afterClose: function () {
+                            // Optional: clear list data each close
+                            oList.setModel(new sap.ui.model.json.JSONModel({ items: [] }));
+                        }
+                    });
+
+                    // Khởi tạo list rỗng
+                    oList.setModel(new sap.ui.model.json.JSONModel({ items: [] }));
+                }
+
+                this._oMatDocFromDlg.open();
+            },
+
+            onMaterialDocToValueHelp: function (oEvent) {
+                var oInput = oEvent.getSource();
+                var aAllItems = this.getView().getModel("MaterialDocModel").getProperty("/results") || [];
+
+                if (!this._oMatDocToDlg) {
+                    var oList = new sap.m.List({
+                        mode: "SingleSelectMaster",
+                        items: {
+                            path: "/items",
+                            template: new sap.m.StandardListItem({ title: "{BELNR}" })
+                        },
+                        select: function (oEvt) {
+                            var sSelected = oEvt.getParameter("listItem").getTitle();
+                            oInput.setValue(sSelected);
+                            this._oMatDocToDlg.close();
+                        }.bind(this)
+                    });
+
+                    var oSearch = new sap.m.SearchField({
+                        placeholder: "Nhập chuỗi cần tìm (ví dụ: 50, 00)...",
+                        search: function (oEvt) {
+                            var q = (oEvt.getParameter("query") || "").trim();
+                            var aFiltered = q
+                                ? aAllItems.filter(function (item) {
+                                    return String(item.BELNR || "").trim().includes(q);
+                                })
+                                : [];
+                            oList.setModel(new sap.ui.model.json.JSONModel({ items: aFiltered }));
+                        }
+                    });
+
+                    this._oMatDocToDlg = new sap.m.Dialog({
+                        title: "Tìm Material Document To",
+                        contentWidth: "500px",
+                        contentHeight: "400px",
+                        content: [oSearch, oList],
+                        endButton: new sap.m.Button({
+                            text: "Đóng",
+                            press: function () { this._oMatDocToDlg.close(); }.bind(this)
+                        }),
+                        afterClose: function () {
+                            // clear list data mỗi lần đóng
+                            oList.setModel(new sap.ui.model.json.JSONModel({ items: [] }));
+                        }
+                    });
+
+                    // Khởi tạo list rỗng
+                    oList.setModel(new sap.ui.model.json.JSONModel({ items: [] }));
+                }
+
+                this._oMatDocToDlg.open();
             }
+
         });
     });
