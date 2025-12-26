@@ -139,12 +139,12 @@ sap.ui.define([
             },
 
             formatter: {
-                statusText: function (sStatus) {
-                    return sStatus === "ACTIVE" ? "Kích hoạt" : "Không kích hoạt";
-                },
-                statusState: function (sStatus) {
-                    return sStatus === "ACTIVE" ? "Success" : "Error";
-                },
+                // statusText: function (sStatus) {
+                //     return sStatus === "ACTIVE" ? "Kích hoạt" : "Không kích hoạt";
+                // },
+                // statusState: function (sStatus) {
+                //     return sStatus === "ACTIVE" ? "Success" : "Error";
+                // },
                 formatDateTime: function (sDateTime) {
                     if (!sDateTime) return "";
                     var oDate = new Date(sDateTime);
@@ -369,7 +369,7 @@ sap.ui.define([
                 var oContext = oSelected.getBindingContext("ProductsModel"); // lấy từ ProductsModel
                 var sCode = oContext.getProperty("JT_CODE");
                 var sName = oContext.getProperty("JT_NAME");
-                var sStatus = oContext.getProperty("STATUS");
+                // var sStatus = oContext.getProperty("STATUS");
                 var sNote = oContext.getProperty("NOTE");
 
                 if (!this._oDialog) {
@@ -382,14 +382,14 @@ sap.ui.define([
                         oView.addDependent(this._oDialog);
                         this.byId("inputCode").setValue(sCode);
                         this.byId("inputName").setValue(sName);
-                        this.byId("inputStatus").setSelectedKey(sStatus);
+                        // this.byId("inputStatus").setSelectedKey(sStatus);
                         this.byId("inputNote").setValue(sNote);
                         this._oDialog.open();
                     }.bind(this));
                 } else {
                     this.byId("inputCode").setValue(sCode);
                     this.byId("inputName").setValue(sName);
-                    this.byId("inputStatus").setSelectedKey(sStatus);
+                    // this.byId("inputStatus").setSelectedKey(sStatus);
                     this.byId("inputNote").setValue(sNote);
                     this._oDialog.open();
                 }
@@ -406,13 +406,13 @@ sap.ui.define([
 
                 var sNewName = this.byId("inputName").getValue();
                 var sNewCode = this.byId("inputCode").getValue();
-                var sNewStatus = this.byId("inputStatus").getSelectedKey();
+                // var sNewStatus = this.byId("inputStatus").getSelectedKey();
                 var sNewNote = this.byId("inputNote").getValue();
 
                 var oUpdatedData = {
                     JT_NAME: sNewName,
                     JT_CODE: sNewCode,
-                    STATUS: sNewStatus,
+                    // STATUS: sNewStatus,
                     NOTE: sNewNote
                 };
 
@@ -478,17 +478,18 @@ sap.ui.define([
                 var oTable = this.byId("jobTable");
                 var sCode = this.byId("createCode").getValue().trim();
                 var sName = this.byId("createName").getValue().trim();
-                var sStatus = this.byId("createStatus").getSelectedKey();
+                // var sStatus = this.byId("createStatus").getSelectedKey();
                 var sNote = this.byId("createNote").getValue().trim();
 
-                if (!sCode || !sName || !sStatus) {
+                if (!sCode || !sName ) {
+                    // || !sStatus) {
                     MessageToast.show("Vui lòng nhập đầy đủ thông tin bắt buộc.");
                     return;
                 }
-                if (sStatus !== "ACTIVE" && sStatus !== "INACTIVE") {
-                    MessageToast.show("Trạng thái không hợp lệ.");
-                    return;
-                }
+                // if (sStatus !== "ACTIVE" && sStatus !== "INACTIVE") {
+                //     MessageToast.show("Trạng thái không hợp lệ.");
+                //     return;
+                // }
 
                 var aAllData = this.getView().getModel("ProductsModel").getProperty("/productsData") || [];
                 var bExists = aAllData.some(function (oItem) {
@@ -504,7 +505,7 @@ sap.ui.define([
                 var oODataModel = this.getOwnerComponent().getModel("JobTitleModel"); // ODataModel
                 var oNewData = {
                     NOTE: sNote,
-                    STATUS: sStatus,
+                    // STATUS: sStatus,
                     JT_NAME: sName,
                     JT_CODE: sCode
                 };

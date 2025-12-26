@@ -35,7 +35,6 @@
                     <PropertyRef Name="JT_CODE" />
                 </Key>
                 <Property Name="NOTE" Type="Edm.String" MaxLength="255" Nullable="true" sap:unicode="false" />
-                <Property Name="STATUS" Type="Edm.String" Nullable="false" MaxLength="15" sap:unicode="false" />
                 <Property Name="UPDATED_DATE" Type="Edm.DateTime" Nullable="true" Precision="0" sap:unicode="false" />
                 <Property Name="UPDATED_BY" Type="Edm.String" Nullable="true" MaxLength="20" sap:unicode="false" />
                 <Property Name="CREATED_DATE" Type="Edm.DateTime" Nullable="true" Precision="0" sap:unicode="false" />
